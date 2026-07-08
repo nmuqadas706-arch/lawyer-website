@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="refresh" content="0; url=customer-login.html">
+  <title>Redirecting...</title>
+  <script>
+    window.location.href = "customer-login.html";
+  </script>
+</head>
+<body>
+  <p>Redirecting to <a href="customer-login.html">customer-login.html</a>...</p>
+</body>
+</html>
