@@ -110,7 +110,7 @@
         <!-- Email -->
         <div class="form-field-luxury">
           <label for="email">Registered Email</label>
-          <input type="email" class="luxury-input form-control" id="email" placeholder="attorney@lawfirm.com" required autocomplete="email">
+          <input type="email" class="luxury-input form-control" id="email" placeholder="attorney@lawfirm.com" name="txt_email" required autocomplete="email">
         </div>
         
         <!-- Password -->
@@ -119,7 +119,7 @@
             <label for="password" style="margin-bottom:0;">Password</label>
             <a href="#" class="text-decoration-none" style="font-size:0.72rem; color:var(--gold); font-weight:600;" onclick="showToast('Password reset link sent to your email.'); return false;">Forgot Password?</a>
           </div>
-          <input type="password" class="luxury-input form-control" id="password" placeholder="Enter your password" required autocomplete="current-password">
+          <input type="password" class="luxury-input form-control" id="password" placeholder="Enter your password" name="txt_password" required autocomplete="current-password">
         </div>
 
         <!-- Remember Me -->
@@ -129,17 +129,38 @@
         </div>
 
         <!-- Submit Button -->
-        <button type="submit" class="btn-gold w-100" style="justify-content:center; padding:14px;">
+        <button type="submit" class="btn-gold w-100" style="justify-content:center; padding:14px; " name="login">
           <i class="fas fa-sign-in-alt me-2"></i>Sign In to Dashboard
         </button>
       </form>
+      <?php
+     include_once 'includes/connection.php';
+      if(isset($_POST['login'])) {
+          $email = $_POST['txt_email'];
+          $password = $_POST['txt_password'];
+
+          $query = "SELECT * FROM lawyers WHERE email='$email' AND password='$password'";
+          $result = mysqli_query($conn, $query);
+
+          if(mysqli_num_rows($result) > 0) {
+              $row = mysqli_fetch_assoc($result);
+              session_start();
+              $_SESSION['lawyer_id'] = $row['id'];
+              $_SESSION['lawyer_name'] = $row['full_name'];
+              header("Location: lawyerdashboard.php");
+              exit();
+          } else {
+              echo "<div class='alert alert-danger'>Invalid email or password.</div>";
+          }
+      }
+      ?>
 
       <!-- Switch Screen Link -->
       <div style="font-size:0.85rem; color:var(--text-muted); text-align:center; margin-top:2rem;">
-        Not yet in the network? <a href="lawyer-register.html" style="color:var(--gold); font-weight:600; text-decoration:none;">Apply as an Attorney</a>
+        Not yet in the network? <a href="lawyer-register.php" style="color:var(--gold); font-weight:600; text-decoration:none;">Apply as an Attorney</a>
       </div>
       <div style="text-align:center; margin-top:1rem; font-size:0.8rem;">
-        Looking for a lawyer? <a href="customer-login.html" style="color:var(--white); font-weight:700; text-decoration:none;">Client Login Portal <i class="fas fa-arrow-right"></i></a>
+        Looking for a lawyer? <a href="customer-login.php" style="color:var(--white); font-weight:700; text-decoration:none;">Client Login Portal <i class="fas fa-arrow-right"></i></a>
       </div>
 
     </div>
@@ -167,7 +188,7 @@
     e.preventDefault();
     showToast('Signed in successfully! Loading dashboard…');
     setTimeout(() => {
-      window.location.href = 'lawyerdashboard.html';
+      window.location.href = 'lawyerdashboard.php';
     }, 1500);
   }
 </script>

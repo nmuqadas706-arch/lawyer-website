@@ -13,8 +13,8 @@ include_once 'includes/header.php';
 
     <!-- Breadcrumb -->
     <div class="breadcrumb-nav mb-3" data-aos="fade-down">
-      <a href="index.html">Home</a><span class="sep">/</span>
-      <a href="search.html">Find Lawyers</a><span class="sep">/</span>
+      <a href="index.php">Home</a><span class="sep">/</span>
+      <a href="search.php">Find Lawyers</a><span class="sep">/</span>
       <span class="current" id="bcName">Attorney Profile</span>
     </div>
 
@@ -329,7 +329,7 @@ include_once 'includes/header.php';
           <div class="info-panel mt-3" data-aos="fade-up">
             <div class="info-panel-title" style="margin-bottom:1rem;"><i class="fas fa-users"></i> Similar Attorneys</div>
             <div id="similarBox"></div>
-            <a href="search.html" class="btn-outline-gold w-100 mt-2" style="justify-content:center;font-size:.78rem;">
+            <a href="search.php" class="btn-outline-gold w-100 mt-2" style="justify-content:center;font-size:.78rem;">
               <i class="fas fa-search me-2"></i>View All Attorneys
             </a>
           </div>
@@ -766,7 +766,7 @@ function buildSimilar() {
   const others = LAWYERS.filter(l=>l.id!==lawyer.id).slice(0,3);
   const colors = ['#C9A84C','#1A2F60','#0d2a1a'];
   $('#similarBox').html(others.map((l,i)=>`
-    <a href="profile.html?id=${l.id}" class="text-decoration-none">
+    <a href="profile.php?id=${l.id}" class="text-decoration-none">
       <div class="similar-card">
         <div class="similar-avatar" style="background:linear-gradient(135deg,${l.c1},${l.c2});color:${i===0?'#0a0a0a':'var(--gold)'};">${l.initials}</div>
         <div>

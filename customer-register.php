@@ -1,3 +1,13 @@
+<?php
+  include_once 'includes/connection.php';
+  session_start();
+  if(isset($_SESSION['customer_id'])){
+    header("Location: customer-dashboard.php");
+    exit();
+  }
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -84,7 +94,7 @@
 <body>
 
 <!-- Back to Home Link -->
-<a href="index.html" style="position:fixed; top:24px; left:24px; z-index:1000; display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; text-decoration:none; transition:var(--transition);" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">
+<a href="index.php" style="position:fixed; top:24px; left:24px; z-index:1000; display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; text-decoration:none; transition:var(--transition);" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">
   <i class="fas fa-arrow-left"></i> Back to Home
 </a>
 
@@ -95,7 +105,7 @@
       
       <!-- Brand Logo -->
       <div class="auth-header">
-        <a href="index.html" class="auth-logo">
+        <a href="index.php" class="auth-logo">
           <div class="brand-icon"><i class="fas fa-balance-scale"></i></div>
           <div style="text-align: left;">
             <span class="brand-text-main">LexElite</span>
@@ -106,54 +116,108 @@
         <p style="font-size:0.85rem; color:var(--text-muted);">Consult with top verified attorneys</p>
       </div>
 
-      <form id="customerRegisterForm" onsubmit="handleRegister(event)">
+      <form id="customerRegisterForm" method="POST" enctype="multipart/form-data" >
         <!-- Full Name -->
         <div class="form-field-luxury">
           <label for="fullName">Full Name</label>
-          <input type="text" class="luxury-input form-control" id="fullName" placeholder="Jane Smith" required autocomplete="name">
+          <input type="text" name="txt_name" class="luxury-input form-control" id="fullName" placeholder="Jane Smith" required autocomplete="name">
         </div>
 
         <!-- Email -->
         <div class="form-field-luxury">
           <label for="email">Email Address</label>
-          <input type="email" class="luxury-input form-control" id="email" placeholder="jane@example.com" required autocomplete="email">
+          <input type="email" name="txt_email" class="luxury-input form-control" id="email" placeholder="jane@example.com" required autocomplete="email">
         </div>
 
         <!-- Phone -->
         <div class="form-field-luxury">
           <label for="phone">Phone Number</label>
-          <input type="tel" class="luxury-input form-control" id="phone" placeholder="+1 (555) 000-0000" required autocomplete="tel">
+          <input type="tel" name="txt_phone" class="luxury-input form-control" id="phone" placeholder="+1 (555) 000-0000" required autocomplete="tel">
         </div>
         
         <!-- Password -->
         <div class="form-field-luxury">
           <label for="password">Password</label>
-          <input type="password" class="luxury-input form-control" id="password" placeholder="Choose a strong password" required autocomplete="new-password">
+          <input type="password" name="txt_password" class="luxury-input form-control" id="password" placeholder="Choose a strong password" required autocomplete="new-password">
         </div>
 
-        <!-- Confirm Password -->
+        <!-- gender -->
         <div class="form-field-luxury">
-          <label for="confirmPassword">Confirm Password</label>
-          <input type="password" class="luxury-input form-control" id="confirmPassword" placeholder="Repeat your password" required autocomplete="new-password">
+          <label for="gender">Gender</label>
+          <select name="txt_gender" class="luxury-input form-control" id="gender" required>
+            <option value="">Select Gender</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="other">Other</option>
+          </select>
         </div>
+        <!-- address -->
+        <div class="form-field-luxury">
+          <label for="address">Address</label>
+          <input type="text" name="txt_address" class="luxury-input form-control" id="address" placeholder="Enter your address" required autocomplete="street-address">
+        </div>
+        <!-- profile-image -->
+        <div class="form-field-luxury">
+          <label for="profileImage">Profile Image</label>
+          <input type="file" name="txt_profile_image" class="luxury-input form-control" id="profileImage" accept="image/*">
+ 
+        </div>
+
+
+            
 
         <!-- Agreement Checkbox -->
         <div class="d-flex align-items-start gap-2 mb-4">
-          <input type="checkbox" id="agreeTerms" style="margin-top:4px; accent-color:var(--gold);" required>
+          <input type="checkbox" name="txt_agree_terms" id="agreeTerms" style="margin-top:4px; accent-color:var(--gold);" required>
           <label for="agreeTerms" style="font-size:0.75rem; color:var(--text-muted); cursor:pointer;">
             I agree to the <a href="#" style="color:var(--gold); text-decoration:none;">Terms of Service</a> &amp; <a href="#" style="color:var(--gold); text-decoration:none;">Privacy Policy</a>. All client communications on LexElite are fully confidential and protected.
           </label>
         </div>
 
         <!-- Submit Button -->
-        <button type="submit" class="btn-gold w-100" style="justify-content:center; padding:14px;">
+        <button type="submit" name="register" class="btn-gold w-100" style="justify-content:center; padding:14px;">
           <i class="fas fa-user-plus me-2"></i>Create Free Account
         </button>
       </form>
+    <?php
+
+    include_once 'includes/connection.php';
+  if((isset($_POST['register']))){
+    
+    $name = $_POST['txt_name'];
+    $email = $_POST['txt_email'];
+    $phone = $_POST['txt_phone'];
+    $password = $_POST['txt_password'];
+    $gender = $_POST['txt_gender'];
+    $address = $_POST['txt_address'];
+    $profile_image = $_FILES['txt_profile_image']['name'];
+    $profile_image_tmp = $_FILES['txt_profile_image']['tmp_name'];
+
+
+    move_uploaded_file($profile_image_tmp, "uploads/$profile_image");
+       
+
+    $query = "INSERT INTO `customers`( `full_name`, `email`, `phone`, `password`, `gender`, `address`, `profile_image`, `created_at`) VALUES ('$name','$email','$phone','$password','$gender','$address','$profile_image', NOW())";
+
+    $result = mysqli_query($conn, $query);
+ 
+    if($result){
+       echo "<script>showToast('Registration successful! Redirecting…'); setTimeout(() => { window.location.href = 'customer-login.php'; }, 1500);</script>";
+    } else {
+       echo "<script>showToast('Registration failed. Please try again.');</script>";
+
+
+  }
+    
+    
+  }
+    
+    
+    ?>
 
       <!-- Switch Screen Link -->
       <div style="font-size:0.85rem; color:var(--text-muted); text-align:center; margin-top:2rem;">
-        Already registered? <a href="customer-login.html" style="color:var(--gold); font-weight:600; text-decoration:none;">Sign In here</a>
+        Already registered? <a href="customer-login.php" style="color:var(--gold); font-weight:600; text-decoration:none;">Sign In here</a>
       </div>
 
     </div>
@@ -187,7 +251,7 @@
     }
     showToast('Registration successful! Redirecting…');
     setTimeout(() => {
-      window.location.href = 'customer-dashboard.html';
+      window.location.href = 'customer-dashboard.php';
     }, 1500);
   }
 </script>

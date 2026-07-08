@@ -1,3 +1,16 @@
+<?php
+include_once 'includes/connection.php';
+session_start();
+
+
+if(!isset($_SESSION['admin_id'])){
+    header("Location: admin-login.php");
+    exit();
+}
+
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -65,8 +78,8 @@
       <div class="menu-item" data-target="reports" onclick="switchPanel('reports', this)"><i class="fas fa-chart-bar"></i> Reports &amp; Charts</div>
 
       <div class="menu-title">Exit</div>
-      <div class="menu-item" onclick="window.location.href='index.html'"><i class="fas fa-home"></i> Back to Homepage</div>
-      <div class="menu-item" onclick="window.location.href='customer-login.html'" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Log Out</div>
+      <div class="menu-item" onclick="window.location.href='index.php'"><i class="fas fa-home"></i> Back to Homepage</div>
+      <div class="menu-item" onclick="window.location.href='admin-logout.php'" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Log Out</div>
     </div>
   </aside>
 
@@ -192,18 +205,64 @@
             <table class="lux-table table table-dark table-hover align-middle mb-0">
               <thead>
                 <tr>
-                  <th>Practitioner ID</th>
-                  <th>Lawyer</th>
-                  <th>Specialization</th>
-                  <th>Bar Location</th>
-                  <th>Hourly Rate</th>
-                  <th>Status</th>
-                  <th>Registered Date</th>
-                  <th>Actions</th>
+        <th>ID</th>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Password</th>
+        <th>Specialization</th>
+        <th>Qualification</th>
+        <th>Experience</th>
+        <th>City</th>
+        <th>Address</th>
+        <th>CNIC-NO</th>
+        <th>profile_image</th>
+        <th>Consultation Fee</th>
+        <th>Status</th>
+        <th>Registered Date</th>
+        <th>Actions</th>
                 </tr>
               </thead>
-              <tbody id="lawyersTableBody">
-                <!-- Loaded dynamically -->
+              <tbody >
+               <?php
+               
+                $query = "SELECT * FROM lawyers";
+                $result = mysqli_query($conn, $query);
+
+                 foreach($result as $row) {
+                  
+                    echo "<tr>";
+                    echo "<td>".$row['lawyer_id']."</td>";
+                    echo "<td>".$row['full_name']."</td>";
+                    echo "<td>".$row['email']."</td>";
+                    echo "<td>".$row['phone']."</td>";
+                    echo "<td>".$row['password']."</td>";
+                    echo "<td>".$row['specialization']."</td>";
+                    echo "<td>".$row['qualification']."</td>";
+                    echo "<td>".$row['experience']."</td>";
+                    echo "<td>".$row['city']."</td>";
+                    echo "<td>".$row['address']."</td>";
+                    echo "<td>".$row['cnic_no']."</td>";
+                   echo "<td>
+<img src='uploads/".$row['profile_image']."'
+style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
+</td>";
+                    echo "<td>".$row['consultation_fee']."</td>";
+                    echo "<td>".$row['status']."</td>";
+                    echo "<td>".$row['created_at']."</td>";
+                    echo "<td>
+                            <button class='btn btn-sm btn-success me-1' onclick='verifyLawyer(".$row['lawyer_id'].")'>Verify</button>
+                            <button class='btn btn-sm btn-danger' onclick='suspendLawyer(".$row['lawyer_id'].")'>Suspend</button>
+                          </td>";
+                    echo "</tr>";
+                  }
+
+                ?>
+               
+               
+               
+               
+              
               </tbody>
             </table>
           </div>

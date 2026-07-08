@@ -28,7 +28,7 @@
   <aside class="dash-sidebar" id="dashSidebar">
     <!-- Brand Logo -->
     <div class="sidebar-brand">
-      <a class="navbar-brand-logo text-decoration-none" href="index.html" style="display:inline-flex;">
+      <a class="navbar-brand-logo text-decoration-none" href="index.php" style="display:inline-flex;">
         <div class="brand-icon" style="width:36px; height:36px; font-size:1rem;"><i class="fas fa-balance-scale"></i></div>
         <div class="ms-2">
           <span class="brand-text-main" style="font-size:1.1rem;">LexElite</span>
@@ -57,8 +57,8 @@
       <div class="menu-item" onclick="switchTab('profile-settings', this)"><i class="fas fa-sliders-h"></i> Profile Settings</div>
 
       <div class="menu-title">Exit Portal</div>
-      <div class="menu-item" onclick="window.location.href='index.html'"><i class="fas fa-home"></i> Back to Homepage</div>
-      <div class="menu-item" onclick="window.location.href='customer-login.html'" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Log Out</div>
+      <div class="menu-item" onclick="window.location.href='index.php'"><i class="fas fa-home"></i> Back to Homepage</div>
+      <div class="menu-item" onclick="window.location.href='customer-logout.php'" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Log Out</div>
     </div>
   </aside>
 

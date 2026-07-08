@@ -14,7 +14,7 @@ include_once 'includes/header.php';
     <div class="row justify-content-center text-center">
       <div class="col-lg-8" data-aos="fade-up">
         <div class="breadcrumb-nav justify-content-center">
-          <a href="index.html">Home</a>
+          <a href="index.php">Home</a>
           <span class="sep">/</span>
           <span class="current">Services</span>
         </div>
@@ -25,8 +25,8 @@ include_once 'includes/header.php';
           From criminal defense to corporate transactions — LexElite offers expert legal representation across every practice area, delivered by verified, elite attorneys.
         </p>
         <div class="d-flex justify-content-center flex-wrap gap-3">
-          <a href="search.html" class="btn-gold"><i class="fas fa-search"></i> Find an Attorney</a>
-          <a href="index.html#contact" class="btn-outline-gold"><i class="fas fa-phone"></i> Free Consultation</a>
+          <a href="search.php" class="btn-gold"><i class="fas fa-search"></i> Find an Attorney</a>
+          <a href="index.php#contact" class="btn-outline-gold"><i class="fas fa-phone"></i> Free Consultation</a>
         </div>
       </div>
     </div>
@@ -80,10 +80,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> Federal Criminal Defense</li>
             <li><i class="fas fa-check-circle"></i> Appeals & Post-Conviction</li>
           </ul>
-          <a href="search.html?area=Criminal+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Criminal+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Criminal Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -104,10 +104,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> Medical Malpractice</li>
             <li><i class="fas fa-check-circle"></i> Civil Rights Violations</li>
           </ul>
-          <a href="search.html?area=Civil+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Civil+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Civil Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -128,10 +128,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> High-Net-Worth Divorce</li>
             <li><i class="fas fa-check-circle"></i> Collaborative Divorce</li>
           </ul>
-          <a href="search.html?area=Divorce+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Divorce+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Divorce Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -152,10 +152,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> Paternity Matters</li>
             <li><i class="fas fa-check-circle"></i> Grandparents' Rights</li>
           </ul>
-          <a href="search.html?area=Family+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Family+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Family Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -176,10 +176,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> Foreclosure Defense</li>
             <li><i class="fas fa-check-circle"></i> Easements & Rights-of-Way</li>
           </ul>
-          <a href="search.html?area=Property+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Property+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Property Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -200,10 +200,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> Affidavit of Support</li>
             <li><i class="fas fa-check-circle"></i> Court-Filing Assistance</li>
           </ul>
-          <a href="search.html?area=Affidavit" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Affidavit" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Affidavit Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -224,10 +224,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> Intellectual Property</li>
             <li><i class="fas fa-check-circle"></i> Securities & Compliance</li>
           </ul>
-          <a href="search.html?area=Corporate+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Corporate+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Corporate Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -248,10 +248,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> Asylum Applications</li>
             <li><i class="fas fa-check-circle"></i> DACA & TPS</li>
           </ul>
-          <a href="search.html?area=Immigration+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Immigration+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Immigration Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -272,10 +272,10 @@ include_once 'includes/header.php';
             <li><i class="fas fa-check-circle"></i> Estate Tax Planning</li>
             <li><i class="fas fa-check-circle"></i> Healthcare Directives</li>
           </ul>
-          <a href="search.html?area=Estate+Planning" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+          <a href="search.php?area=Estate+Planning" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
             <i class="fas fa-search"></i> Find Estate Lawyer
           </a>
-          <a href="index.html#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
             <i class="fas fa-phone"></i> Free Consultation
           </a>
         </div>
@@ -354,7 +354,7 @@ include_once 'includes/header.php';
             </div>
           </div>
           <div class="mt-3">
-            <a href="search.html" class="btn-gold"><i class="fas fa-play-circle"></i> Start Your Journey</a>
+            <a href="search.php" class="btn-gold"><i class="fas fa-play-circle"></i> Start Your Journey</a>
           </div>
         </div>
       </div>
@@ -493,8 +493,8 @@ include_once 'includes/header.php';
         <h2 class="cta-title">Get <span style="background:var(--gold-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Expert Legal Help</span> Today</h2>
         <p class="cta-subtitle">Don't face your legal challenges alone. Our elite attorneys are ready to fight for you — starting with a free consultation.</p>
         <div class="d-flex flex-wrap justify-content-center gap-3 mb-4">
-          <a href="search.html" class="btn-gold"><i class="fas fa-search"></i> Find Your Lawyer</a>
-          <a href="index.html#contact" class="btn-outline-gold"><i class="fas fa-phone"></i> Call Us Free</a>
+          <a href="search.php" class="btn-gold"><i class="fas fa-search"></i> Find Your Lawyer</a>
+          <a href="index.php#contact" class="btn-outline-gold"><i class="fas fa-phone"></i> Call Us Free</a>
         </div>
         <p style="font-size:0.78rem; color:rgba(255,255,255,0.45);">
           <i class="fas fa-lock" style="color:var(--gold); margin-right:5px;"></i>
@@ -511,7 +511,7 @@ include_once 'includes/header.php';
     <div class="row g-5">
       <div class="col-lg-4 col-md-6">
         <div class="footer-brand">
-          <a class="navbar-brand-logo text-decoration-none" href="index.html" style="display:inline-flex;">
+          <a class="navbar-brand-logo text-decoration-none" href="index.php" style="display:inline-flex;">
             <div class="brand-icon"><i class="fas fa-balance-scale"></i></div>
             <div class="ms-2">
               <span class="brand-text-main">LexElite</span>
@@ -530,11 +530,11 @@ include_once 'includes/header.php';
       <div class="col-lg-2 col-md-6 col-6">
         <h6 class="footer-heading">Quick Links</h6>
         <ul class="footer-links">
-          <li><a href="index.html"><i class="fas fa-chevron-right"></i> Home</a></li>
-          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
-          <li><a href="services.html"><i class="fas fa-chevron-right"></i> Services</a></li>
-          <li><a href="search.html"><i class="fas fa-chevron-right"></i> Find Lawyer</a></li>
-          <li><a href="index.html#faq"><i class="fas fa-chevron-right"></i> FAQs</a></li>
+          <li><a href="index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
+          <li><a href="about.php"><i class="fas fa-chevron-right"></i> About Us</a></li>
+          <li><a href="services.php"><i class="fas fa-chevron-right"></i> Services</a></li>
+          <li><a href="search.php"><i class="fas fa-chevron-right"></i> Find Lawyer</a></li>
+          <li><a href="index.php#faq"><i class="fas fa-chevron-right"></i> FAQs</a></li>
         </ul>
       </div>
       <div class="col-lg-2 col-md-6 col-6">
@@ -572,7 +572,7 @@ include_once 'includes/header.php';
   </div>
   <div class="footer-bottom">
     <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <p class="footer-bottom-text mb-0">© 2024 <a href="index.html">LexElite</a>. All rights reserved.</p>
+      <p class="footer-bottom-text mb-0">© 2024 <a href="index.php">LexElite</a>. All rights reserved.</p>
       <div class="d-flex gap-3">
         <a href="#" style="font-size:0.78rem; color:var(--text-muted);">Privacy Policy</a>
         <a href="#" style="font-size:0.78rem; color:var(--text-muted);">Terms of Service</a>

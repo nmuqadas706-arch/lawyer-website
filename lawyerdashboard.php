@@ -326,8 +326,8 @@
       <div class="menu-item" onclick="switchTab('completed', this)"><i class="fas fa-clipboard-check"></i> Completed</div>
 
       <div class="menu-title">Account</div>
-      <div class="menu-item" onclick="window.location.href='index.html'"><i class="fas fa-home"></i> Back to Homepage</div>
-      <div class="menu-item" onclick="window.location.href='lawyer-login.html'" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Log Out</div>
+      <div class="menu-item" onclick="window.location.href='index.php'"><i class="fas fa-home"></i> Back to Homepage</div>
+      <div class="menu-item" onclick="window.location.href='lawyer-logout.php  '" style="color:#ef4444;"><i class="fas fa-sign-out-alt"></i> Log Out</div>
     </div>
   </aside>
 

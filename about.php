@@ -7,42 +7,7 @@ include_once 'includes/header.php';
 
 ?>
 
-<!-- ===================== NAVBAR ===================== -->
-<nav id="mainNavbar" class="navbar navbar-expand-lg fixed-top scrolled">
-  <div class="container">
-    <a class="navbar-brand navbar-brand-logo" href="index.html">
-      <div class="brand-icon"><i class="fas fa-balance-scale"></i></div>
-      <div>
-        <span class="brand-text-main">LexElite</span>
-        <span class="brand-text-sub">Law & Justice</span>
-      </div>
-    </a>
 
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navCollapse">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-
-    <div class="collapse navbar-collapse" id="navCollapse">
-      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
-        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
-        <li class="nav-item"><a class="nav-link active" href="about.html">About</a></li>
-        <li class="nav-item"><a class="nav-link" href="services.html">Services</a></li>
-        <li class="nav-item"><a class="nav-link" href="search.html">Lawyers</a></li>
-        <li class="nav-item"><a class="nav-link" href="index.html#contact">Contact</a></li>
-        <li class="nav-item ms-lg-3">
-          <a class="btn-outline-gold" href="lawyer-login.html" style="padding:10px 20px; font-size:0.78rem;">
-            <i class="fas fa-user-tie"></i> Join as Lawyer
-          </a>
-        </li>
-        <li class="nav-item ms-lg-2">
-          <a class="btn-gold" href="customer-login.html" style="padding:10px 20px; font-size:0.78rem;">
-            <i class="fas fa-search"></i> Find Lawyer
-          </a>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
 
 <!-- ===================== ABOUT HERO ===================== -->
 <section class="about-hero" style="padding-top:9rem;">
@@ -52,7 +17,7 @@ include_once 'includes/header.php';
     <div class="row">
       <div class="col-lg-7" data-aos="fade-right">
         <div class="breadcrumb-nav">
-          <a href="index.html">Home</a>
+          <a href="index.php">Home</a>
           <span class="sep">/</span>
           <span class="current">About Us</span>
         </div>
@@ -63,7 +28,7 @@ include_once 'includes/header.php';
           We are on a mission to make premium legal representation accessible to everyone. Founded by trial attorneys and legal technologists, LexElite bridges the gap between exceptional lawyers and the clients who need them most.
         </p>
         <div class="d-flex flex-wrap gap-3 mt-4">
-          <a href="search.html" class="btn-gold"><i class="fas fa-search"></i> Find a Lawyer</a>
+          <a href="search.php" class="btn-gold"><i class="fas fa-search"></i> Find a Lawyer</a>
           <a href="#story" class="btn-outline-gold"><i class="fas fa-book-open"></i> Our Story</a>
         </div>
       </div>
@@ -444,8 +409,8 @@ include_once 'includes/header.php';
         <h2 class="cta-title">Be Part of the <span style="background:var(--gold-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Legal Revolution</span></h2>
         <p class="cta-subtitle">Whether you need legal help or you're an attorney looking to grow your practice, LexElite is your platform.</p>
         <div class="d-flex flex-wrap justify-content-center gap-3">
-          <a href="search.html" class="btn-gold"><i class="fas fa-search"></i> Find a Lawyer</a>
-          <a href="auth-lawyer.html" class="btn-outline-gold"><i class="fas fa-user-tie"></i> Join as Attorney</a>
+          <a href="search.php" class="btn-gold"><i class="fas fa-search"></i> Find a Lawyer</a>
+          <a href="auth-lawyer.php" class="btn-outline-gold"><i class="fas fa-user-tie"></i> Join as Attorney</a>
         </div>
       </div>
     </div>
@@ -458,7 +423,7 @@ include_once 'includes/header.php';
     <div class="row g-5">
       <div class="col-lg-4 col-md-6">
         <div class="footer-brand">
-          <a class="navbar-brand-logo text-decoration-none" href="index.html" style="display:inline-flex;">
+          <a class="navbar-brand-logo text-decoration-none" href="index.php" style="display:inline-flex;">
             <div class="brand-icon"><i class="fas fa-balance-scale"></i></div>
             <div class="ms-2">
               <span class="brand-text-main">LexElite</span>
@@ -477,21 +442,21 @@ include_once 'includes/header.php';
       <div class="col-lg-2 col-md-6 col-6">
         <h6 class="footer-heading">Quick Links</h6>
         <ul class="footer-links">
-          <li><a href="index.html"><i class="fas fa-chevron-right"></i> Home</a></li>
-          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
-          <li><a href="services.html"><i class="fas fa-chevron-right"></i> Services</a></li>
-          <li><a href="search.html"><i class="fas fa-chevron-right"></i> Find Lawyer</a></li>
-          <li><a href="index.html#faq"><i class="fas fa-chevron-right"></i> FAQs</a></li>
+          <li><a href="index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
+          <li><a href="about.php"><i class="fas fa-chevron-right"></i> About Us</a></li>
+          <li><a href="services.php"><i class="fas fa-chevron-right"></i> Services</a></li>
+          <li><a href="search.php"><i class="fas fa-chevron-right"></i> Find Lawyer</a></li>
+          <li><a href="index.php#faq"><i class="fas fa-chevron-right"></i> FAQs</a></li>
         </ul>
       </div>
       <div class="col-lg-2 col-md-6 col-6">
         <h6 class="footer-heading">Practice Areas</h6>
         <ul class="footer-links">
-          <li><a href="services.html#criminal"><i class="fas fa-chevron-right"></i> Criminal Law</a></li>
-          <li><a href="services.html#civil"><i class="fas fa-chevron-right"></i> Civil Law</a></li>
-          <li><a href="services.html#divorce"><i class="fas fa-chevron-right"></i> Divorce Law</a></li>
-          <li><a href="services.html#family"><i class="fas fa-chevron-right"></i> Family Law</a></li>
-          <li><a href="services.html#corporate"><i class="fas fa-chevron-right"></i> Corporate Law</a></li>
+          <li><a href="services.php#criminal"><i class="fas fa-chevron-right"></i> Criminal Law</a></li>
+          <li><a href="services.php#civil"><i class="fas fa-chevron-right"></i> Civil Law</a></li>
+          <li><a href="services.php#divorce"><i class="fas fa-chevron-right"></i> Divorce Law</a></li>
+          <li><a href="services.php#family"><i class="fas fa-chevron-right"></i> Family Law</a></li>
+          <li><a href="services.php#corporate"><i class="fas fa-chevron-right"></i> Corporate Law</a></li>
         </ul>
       </div>
       <div class="col-lg-4 col-md-6">
@@ -513,7 +478,7 @@ include_once 'includes/header.php';
   </div>
   <div class="footer-bottom">
     <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <p class="footer-bottom-text mb-0">© 2024 <a href="index.html">LexElite</a>. All rights reserved.</p>
+      <p class="footer-bottom-text mb-0">© 2024 <a href="index.php">LexElite</a>. All rights reserved.</p>
       <div class="d-flex gap-3">
         <a href="#" style="font-size:0.78rem; color:var(--text-muted);">Privacy Policy</a>
         <a href="#" style="font-size:0.78rem; color:var(--text-muted);">Terms of Service</a>

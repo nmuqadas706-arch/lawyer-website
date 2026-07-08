@@ -34,7 +34,7 @@ include_once 'includes/header.php';
           <a href="#search" class="btn-gold">
             <i class="fas fa-search"></i> Find Your Lawyer
           </a>
-          <a href="about.html" class="btn-outline-gold">
+          <a href="about.php" class="btn-outline-gold">
             <i class="fas fa-play-circle"></i> Our Story
           </a>
         </div>
@@ -185,7 +185,7 @@ include_once 'includes/header.php';
               <span class="meta-item"><i class="fas fa-briefcase"></i> 18 yrs exp</span>
             </div>
             <div class="mt-3 d-flex gap-2">
-              <a href="profile.html" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
+              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
               <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
             </div>
           </div>
@@ -210,7 +210,7 @@ include_once 'includes/header.php';
               <span class="meta-item"><i class="fas fa-briefcase"></i> 14 yrs exp</span>
             </div>
             <div class="mt-3 d-flex gap-2">
-              <a href="profile.html" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
+              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
               <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
             </div>
           </div>
@@ -235,7 +235,7 @@ include_once 'includes/header.php';
               <span class="meta-item"><i class="fas fa-briefcase"></i> 22 yrs exp</span>
             </div>
             <div class="mt-3 d-flex gap-2">
-              <a href="profile.html" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
+              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
               <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
             </div>
           </div>
@@ -260,7 +260,7 @@ include_once 'includes/header.php';
               <span class="meta-item"><i class="fas fa-briefcase"></i> 11 yrs exp</span>
             </div>
             <div class="mt-3 d-flex gap-2">
-              <a href="profile.html" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
+              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
               <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
             </div>
           </div>
@@ -285,7 +285,7 @@ include_once 'includes/header.php';
               <span class="meta-item"><i class="fas fa-briefcase"></i> 16 yrs exp</span>
             </div>
             <div class="mt-3 d-flex gap-2">
-              <a href="profile.html" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
+              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
               <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
             </div>
           </div>
@@ -310,7 +310,7 @@ include_once 'includes/header.php';
               <span class="meta-item"><i class="fas fa-briefcase"></i> 9 yrs exp</span>
             </div>
             <div class="mt-3 d-flex gap-2">
-              <a href="profile.html" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
+              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
               <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
             </div>
           </div>
@@ -320,7 +320,7 @@ include_once 'includes/header.php';
     </div>
 
     <div class="text-center mt-5" data-aos="fade-up">
-      <a href="search.html" class="btn-outline-gold">
+      <a href="search.php" class="btn-outline-gold">
         <i class="fas fa-th-large"></i> View All Lawyers
       </a>
     </div>
@@ -346,7 +346,7 @@ include_once 'includes/header.php';
           <div class="service-icon-wrapper"><i class="fas fa-gavel"></i></div>
           <h4 class="service-title">Criminal Law</h4>
           <p class="service-desc">Expert criminal defense attorneys who protect your rights and fight aggressively for your freedom in court.</p>
-          <a href="services.html#criminal" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
+          <a href="services.php#criminal" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
 
@@ -355,7 +355,7 @@ include_once 'includes/header.php';
           <div class="service-icon-wrapper"><i class="fas fa-scale-balanced"></i></div>
           <h4 class="service-title">Civil Law</h4>
           <p class="service-desc">Skilled civil litigators handling disputes, contracts, and torts with strategic legal solutions.</p>
-          <a href="services.html#civil" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
+          <a href="services.php#civil" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
 
@@ -364,7 +364,7 @@ include_once 'includes/header.php';
           <div class="service-icon-wrapper"><i class="fas fa-ring"></i></div>
           <h4 class="service-title">Divorce Law</h4>
           <p class="service-desc">Compassionate divorce attorneys guiding you through separation, asset division, and custody agreements.</p>
-          <a href="services.html#divorce" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
+          <a href="services.php#divorce" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
 
@@ -373,7 +373,7 @@ include_once 'includes/header.php';
           <div class="service-icon-wrapper"><i class="fas fa-heart"></i></div>
           <h4 class="service-title">Family Law</h4>
           <p class="service-desc">Protecting family bonds through adoption, guardianship, custody, and domestic relations expertise.</p>
-          <a href="services.html#family" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
+          <a href="services.php#family" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
 
@@ -382,7 +382,7 @@ include_once 'includes/header.php';
           <div class="service-icon-wrapper"><i class="fas fa-house"></i></div>
           <h4 class="service-title">Property Law</h4>
           <p class="service-desc">Real estate attorneys handling purchases, disputes, title issues, and landlord-tenant conflicts.</p>
-          <a href="services.html#property" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
+          <a href="services.php#property" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
 
@@ -391,14 +391,14 @@ include_once 'includes/header.php';
           <div class="service-icon-wrapper"><i class="fas fa-building"></i></div>
           <h4 class="service-title">Corporate Law</h4>
           <p class="service-desc">Top-tier corporate counsel for startups and enterprises — contracts, M&amp;A, and compliance solutions.</p>
-          <a href="services.html#corporate" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
+          <a href="services.php#corporate" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
         </div>
       </div>
 
     </div>
 
     <div class="text-center mt-5" data-aos="fade-up">
-      <a href="services.html" class="btn-gold">
+      <a href="services.php" class="btn-gold">
         <i class="fas fa-layer-group"></i> View All Services
       </a>
     </div>
@@ -415,7 +415,7 @@ include_once 'includes/header.php';
         <h2 class="section-title">Why Thousands <span class="text-gold">Trust</span> LexElite</h2>
         <div class="gold-line"></div>
         <p class="section-subtitle mb-4">We combine cutting-edge technology with deep legal expertise to give you unmatched access to justice.</p>
-        <a href="about.html" class="btn-gold">
+        <a href="about.php" class="btn-gold">
           <i class="fas fa-info-circle"></i> Learn More About Us
         </a>
       </div>
@@ -738,10 +738,10 @@ include_once 'includes/header.php';
         <h2 class="cta-title">Ready for <span style="background:var(--gold-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">Expert</span> Legal Help?</h2>
         <p class="cta-subtitle">Join over 50,000 clients who found their ideal attorney on LexElite. Justice is just one click away.</p>
         <div class="d-flex flex-wrap justify-content-center gap-3">
-          <a href="search.html" class="btn-gold">
+          <a href="search.php" class="btn-gold">
             <i class="fas fa-search"></i> Find Your Lawyer
           </a>
-          <a href="lawyer-login.html" class="btn-outline-gold">
+          <a href="lawyer-login.php" class="btn-outline-gold">
             <i class="fas fa-user-tie"></i> Join as Attorney
           </a>
         </div>
@@ -763,7 +763,7 @@ include_once 'includes/header.php';
       <!-- Brand -->
       <div class="col-lg-4 col-md-6">
         <div class="footer-brand">
-          <a class="navbar-brand-logo text-decoration-none" href="index.html" style="display:inline-flex;">
+          <a class="navbar-brand-logo text-decoration-none" href="index.php" style="display:inline-flex;">
             <div class="brand-icon"><i class="fas fa-balance-scale"></i></div>
             <div class="ms-2">
               <span class="brand-text-main">LexElite</span>
@@ -785,10 +785,10 @@ include_once 'includes/header.php';
       <div class="col-lg-2 col-md-6 col-6">
         <h6 class="footer-heading">Quick Links</h6>
         <ul class="footer-links">
-          <li><a href="index.html"><i class="fas fa-chevron-right"></i> Home</a></li>
-          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
-          <li><a href="services.html"><i class="fas fa-chevron-right"></i> Services</a></li>
-          <li><a href="search.html"><i class="fas fa-chevron-right"></i> Find Lawyer</a></li>
+          <li><a href="index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
+          <li><a href="about.php"><i class="fas fa-chevron-right"></i> About Us</a></li>
+          <li><a href="services.php"><i class="fas fa-chevron-right"></i> Services</a></li>
+          <li><a href="search.php"><i class="fas fa-chevron-right"></i> Find Lawyer</a></li>
           <li><a href="#faq"><i class="fas fa-chevron-right"></i> FAQs</a></li>
           <li><a href="#contact"><i class="fas fa-chevron-right"></i> Contact</a></li>
         </ul>
@@ -798,12 +798,12 @@ include_once 'includes/header.php';
       <div class="col-lg-2 col-md-6 col-6">
         <h6 class="footer-heading">Practice Areas</h6>
         <ul class="footer-links">
-          <li><a href="services.html#criminal"><i class="fas fa-chevron-right"></i> Criminal Law</a></li>
-          <li><a href="services.html#civil"><i class="fas fa-chevron-right"></i> Civil Law</a></li>
-          <li><a href="services.html#divorce"><i class="fas fa-chevron-right"></i> Divorce Law</a></li>
-          <li><a href="services.html#family"><i class="fas fa-chevron-right"></i> Family Law</a></li>
-          <li><a href="services.html#property"><i class="fas fa-chevron-right"></i> Property Law</a></li>
-          <li><a href="services.html#corporate"><i class="fas fa-chevron-right"></i> Corporate Law</a></li>
+          <li><a href="services.php#criminal"><i class="fas fa-chevron-right"></i> Criminal Law</a></li>
+          <li><a href="services.php#civil"><i class="fas fa-chevron-right"></i> Civil Law</a></li>
+          <li><a href="services.php#divorce"><i class="fas fa-chevron-right"></i> Divorce Law</a></li>
+          <li><a href="services.php#family"><i class="fas fa-chevron-right"></i> Family Law</a></li>
+          <li><a href="services.php#property"><i class="fas fa-chevron-right"></i> Property Law</a></li>
+          <li><a href="services.php#corporate"><i class="fas fa-chevron-right"></i> Corporate Law</a></li>
         </ul>
       </div>
 
@@ -833,7 +833,7 @@ include_once 'includes/header.php';
 
   <div class="footer-bottom">
     <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <p class="footer-bottom-text mb-0">© 2024 <a href="index.html">LexElite</a>. All rights reserved. Connecting clients with excellence.</p>
+      <p class="footer-bottom-text mb-0">© 2024 <a href="index.php">LexElite</a>. All rights reserved. Connecting clients with excellence.</p>
       <div class="d-flex gap-3">
         <a href="#" style="font-size:0.78rem; color:var(--text-muted);">Privacy Policy</a>
         <a href="#" style="font-size:0.78rem; color:var(--text-muted);">Terms of Service</a>
@@ -952,7 +952,7 @@ include_once 'includes/header.php';
       setTimeout(() => $('#practiceArea').css('border-color',''), 1500);
       return;
     }
-    window.location.href = `search.html?area=${encodeURIComponent(area || '')}&loc=${encodeURIComponent(location || '')}`;
+    window.location.href = `search.php?area=${encodeURIComponent(area || '')}&loc=${encodeURIComponent(location || '')}`;
   }
 
   $('#searchBtn').on('keypress', function(e) {

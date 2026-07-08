@@ -1,3 +1,11 @@
+<?php
+  include_once 'includes/connection.php';
+  session_start();
+  if(isset($_SESSION['customer_id'])){
+    header("Location: customer-dashboard.php");
+    exit();
+  }
+  ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,7 +111,7 @@
 <body>
 
 <!-- Back to Home Link -->
-<a href="index.html" style="position:fixed; top:24px; left:24px; z-index:1000; display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; text-decoration:none; transition:var(--transition);" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">
+<a href="index.php" style="position:fixed; top:24px; left:24px; z-index:1000; display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; text-decoration:none; transition:var(--transition);" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">
   <i class="fas fa-arrow-left"></i> Back to Home
 </a>
 
@@ -129,7 +137,7 @@
         <!-- Email -->
         <div class="form-field-luxury">
           <label for="email">Email Address</label>
-          <input type="email" class="luxury-input form-control" id="email" placeholder="your@email.com" required autocomplete="email">
+          <input type="email" name="txt_email" class="luxury-input form-control" id="email" placeholder="your@email.com" required autocomplete="email">
         </div>
         
         <!-- Password -->
@@ -138,7 +146,7 @@
             <label for="password" style="margin-bottom:0;">Password</label>
             <a href="#" class="text-decoration-none" style="font-size:0.72rem; color:var(--gold); font-weight:600;" onclick="showToast('Password reset link sent to your email.'); return false;">Forgot Password?</a>
           </div>
-          <input type="password" class="luxury-input form-control" id="password" placeholder="Enter your password" required autocomplete="current-password">
+          <input type="password" name="txt_password" class="luxury-input form-control" id="password" placeholder="Enter your password" required autocomplete="current-password">
         </div>
 
         <!-- Remember Me -->
@@ -148,9 +156,30 @@
         </div>
 
         <!-- Submit Button -->
-        <button type="submit" class="btn-gold w-100" style="justify-content:center; padding:14px;">
+        <button type="submit" name="login" class="btn-gold w-100" style="justify-content:center; padding:14px;">
           <i class="fas fa-sign-in-alt me-2"></i>Sign In
         </button>
+        <?php
+     include_once 'includes/connection.php';
+      if(isset($_POST['login'])) {
+          $email = $_POST['txt_email'];
+          $password = $_POST['txt_password'];
+
+          $query = "SELECT * FROM customers WHERE email='$email' AND password='$password'";
+          $result = mysqli_query($conn, $query);
+
+          if(mysqli_num_rows($result) > 0) {
+              $row = mysqli_fetch_assoc($result);
+              session_start();
+              $_SESSION['customer_id'] = $row['id'];
+              $_SESSION['customer_name'] = $row['full_name'];
+              header("Location: customer-dashboard.php");
+              exit();
+          } else {
+              echo "<div class='alert alert-danger'>Invalid email or password.</div>";
+          }
+      }
+      ?>
 
         <!-- Divider -->
         <div style="text-align:center; margin:1.5rem 0; font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">
@@ -174,10 +203,10 @@
 
       <!-- Switch Screen Link -->
       <div style="font-size:0.85rem; color:var(--text-muted); text-align:center; margin-top:2rem;">
-        New to LexElite? <a href="customer-register.html" style="color:var(--gold); font-weight:600; text-decoration:none;">Create an account</a>
+        New to LexElite? <a href="customer-register.php" style="color:var(--gold); font-weight:600; text-decoration:none;">Create an account</a>
       </div>
       <div style="text-align:center; margin-top:1rem; font-size:0.8rem;">
-        Are you an attorney? <a href="lawyer-login.html" style="color:var(--white); font-weight:700; text-decoration:none;">Attorney Portal <i class="fas fa-arrow-right"></i></a>
+        Are you an attorney? <a href="lawyer-login.php" style="color:var(--white); font-weight:700; text-decoration:none;">Attorney Portal <i class="fas fa-arrow-right"></i></a>
       </div>
 
     </div>
@@ -205,7 +234,7 @@
     e.preventDefault();
     showToast('Signed in successfully! Redirecting…');
     setTimeout(() => {
-      window.location.href = 'customer-dashboard.html';
+      window.location.href = 'customer-dashboard.php';
     }, 1500);
   }
 </script>

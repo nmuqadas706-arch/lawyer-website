@@ -14,7 +14,7 @@ include_once 'includes/header.php';
       <div class="col-lg-10">
         <div class="text-center mb-4" data-aos="fade-down">
           <div class="breadcrumb-nav justify-content-center">
-            <a href="index.html">Home</a><span class="sep">/</span>
+            <a href="index.php">Home</a><span class="sep">/</span>
             <span class="current">Find Lawyers</span>
           </div>
           <span class="section-badge">Smart Search</span>
@@ -226,7 +226,7 @@ include_once 'includes/header.php';
     <div class="row g-5">
       <div class="col-lg-4 col-md-6">
         <div class="footer-brand">
-          <a class="navbar-brand-logo text-decoration-none" href="index.html" style="display:inline-flex;">
+          <a class="navbar-brand-logo text-decoration-none" href="index.php" style="display:inline-flex;">
             <div class="brand-icon"><i class="fas fa-balance-scale"></i></div>
             <div class="ms-2">
               <span class="brand-text-main">LexElite</span>
@@ -245,20 +245,20 @@ include_once 'includes/header.php';
       <div class="col-lg-2 col-md-6 col-6">
         <h6 class="footer-heading">Quick Links</h6>
         <ul class="footer-links">
-          <li><a href="index.html"><i class="fas fa-chevron-right"></i> Home</a></li>
-          <li><a href="about.html"><i class="fas fa-chevron-right"></i> About Us</a></li>
-          <li><a href="services.html"><i class="fas fa-chevron-right"></i> Services</a></li>
-          <li><a href="search.html"><i class="fas fa-chevron-right"></i> Find Lawyer</a></li>
+          <li><a href="index.php"><i class="fas fa-chevron-right"></i> Home</a></li>
+          <li><a href="about.php"><i class="fas fa-chevron-right"></i> About Us</a></li>
+          <li><a href="services.php"><i class="fas fa-chevron-right"></i> Services</a></li>
+          <li><a href="search.php"><i class="fas fa-chevron-right"></i> Find Lawyer</a></li>
         </ul>
       </div>
       <div class="col-lg-2 col-md-6 col-6">
         <h6 class="footer-heading">Practice Areas</h6>
         <ul class="footer-links">
-          <li><a href="services.html#criminal"><i class="fas fa-chevron-right"></i> Criminal</a></li>
-          <li><a href="services.html#civil"><i class="fas fa-chevron-right"></i> Civil</a></li>
-          <li><a href="services.html#divorce"><i class="fas fa-chevron-right"></i> Divorce</a></li>
-          <li><a href="services.html#family"><i class="fas fa-chevron-right"></i> Family</a></li>
-          <li><a href="services.html#corporate"><i class="fas fa-chevron-right"></i> Corporate</a></li>
+          <li><a href="services.php#criminal"><i class="fas fa-chevron-right"></i> Criminal</a></li>
+          <li><a href="services.php#civil"><i class="fas fa-chevron-right"></i> Civil</a></li>
+          <li><a href="services.php#divorce"><i class="fas fa-chevron-right"></i> Divorce</a></li>
+          <li><a href="services.php#family"><i class="fas fa-chevron-right"></i> Family</a></li>
+          <li><a href="services.php#corporate"><i class="fas fa-chevron-right"></i> Corporate</a></li>
         </ul>
       </div>
       <div class="col-lg-4 col-md-6">
@@ -280,7 +280,7 @@ include_once 'includes/header.php';
   </div>
   <div class="footer-bottom">
     <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
-      <p class="footer-bottom-text mb-0">© 2024 <a href="index.html">LexElite</a>. All rights reserved.</p>
+      <p class="footer-bottom-text mb-0">© 2024 <a href="index.php">LexElite</a>. All rights reserved.</p>
       <div class="d-flex gap-3">
         <a href="#" style="font-size:.78rem;color:var(--text-muted);">Privacy Policy</a>
         <a href="#" style="font-size:.78rem;color:var(--text-muted);">Terms of Service</a>
@@ -362,7 +362,7 @@ function renderListCard(l) {
       </div>
       <!-- Mobile CTA -->
       <div class="lsc-actions-inline d-lg-none">
-        <a href="profile.html?id=${l.id}" class="btn-gold" style="padding:9px 18px;font-size:.75rem;flex:1;justify-content:center;"><i class="fas fa-user"></i> View Profile</a>
+        <a href="profile.php?id=${l.id}" class="btn-gold" style="padding:9px 18px;font-size:.75rem;flex:1;justify-content:center;"><i class="fas fa-user"></i> View Profile</a>
         <a href="#" class="btn-outline-gold" style="padding:9px 14px;font-size:.75rem;"><i class="fas fa-phone"></i></a>
       </div>
     </div>
@@ -377,7 +377,7 @@ function renderListCard(l) {
         <div class="lsc-fee">$${l.fee}<span style="font-size:.7rem;font-weight:400;color:var(--text-muted);">/hr</span></div>
       </div>
       <div class="lsc-actions">
-        <a href="profile.html?id=${l.id}" class="btn-gold" style="padding:10px 16px;font-size:.75rem;justify-content:center;"><i class="fas fa-user"></i> View Profile</a>
+        <a href="profile.php?id=${l.id}" class="btn-gold" style="padding:10px 16px;font-size:.75rem;justify-content:center;"><i class="fas fa-user"></i> View Profile</a>
         <a href="#" class="btn-outline-gold" style="padding:9px 14px;font-size:.75rem;justify-content:center;"><i class="fas fa-phone me-1"></i> Contact</a>
       </div>
     </div>
@@ -414,7 +414,7 @@ function renderGridCard(l) {
             ${l.available ? '<br><span style="font-size:.68rem;font-weight:600;color:#4ade80;"><i class="fas fa-circle" style="font-size:.45rem;"></i> Available</span>' : ''}
           </div>
         </div>
-        <a href="profile.html?id=${l.id}" class="btn-gold w-100" style="justify-content:center;padding:11px;font-size:.78rem;">
+        <a href="profile.php?id=${l.id}" class="btn-gold w-100" style="justify-content:center;padding:11px;font-size:.78rem;">
           <i class="fas fa-user me-2"></i>View Full Profile
         </a>
       </div>
