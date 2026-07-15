@@ -1,11 +1,30 @@
 <?php
   include_once 'includes/connection.php';
   session_start();
+  
   if(isset($_SESSION['customer_id'])){
     header("Location: customer-dashboard.php");
     exit();
   }
-  ?>
+
+  if(isset($_POST['login'])) {
+      $email = $_POST['txt_email'];
+      $password = $_POST['txt_password'];
+
+      $query = "SELECT * FROM customers WHERE email='$email' AND password='$password'";
+      $result = mysqli_query($conn, $query);
+
+      if(mysqli_num_rows($result) > 0) {
+          $row = mysqli_fetch_assoc($result);
+          $_SESSION['customer_id'] = $row['customer_id'];
+          $_SESSION['customer_name'] = $row['full_name'];
+          header("Location: customer-dashboard.php");
+          exit();
+      } else {
+          $login_error = "Invalid email or password.";
+      }
+  }
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -133,7 +152,7 @@
         <p style="font-size:0.85rem; color:var(--text-muted);">Sign in to your client account</p>
       </div>
 
-      <form id="customerLoginForm" onsubmit="handleLogin(event)">
+      <form method="POST" action="">
         <!-- Email -->
         <div class="form-field-luxury">
           <label for="email">Email Address</label>
@@ -160,26 +179,10 @@
           <i class="fas fa-sign-in-alt me-2"></i>Sign In
         </button>
         <?php
-     include_once 'includes/connection.php';
-      if(isset($_POST['login'])) {
-          $email = $_POST['txt_email'];
-          $password = $_POST['txt_password'];
-
-          $query = "SELECT * FROM customers WHERE email='$email' AND password='$password'";
-          $result = mysqli_query($conn, $query);
-
-          if(mysqli_num_rows($result) > 0) {
-              $row = mysqli_fetch_assoc($result);
-              session_start();
-              $_SESSION['customer_id'] = $row['id'];
-              $_SESSION['customer_name'] = $row['full_name'];
-              header("Location: customer-dashboard.php");
-              exit();
-          } else {
-              echo "<div class='alert alert-danger'>Invalid email or password.</div>";
-          }
-      }
-      ?>
+        if(isset($login_error)) {
+            echo "<div class='alert alert-danger mt-3'>$login_error</div>";
+        }
+        ?>
 
         <!-- Divider -->
         <div style="text-align:center; margin:1.5rem 0; font-size:0.7rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em;">

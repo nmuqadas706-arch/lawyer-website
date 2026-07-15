@@ -166,157 +166,64 @@ include_once 'includes/header.php';
     </div>
 
     <div class="row g-4" id="featuredLawyersGrid">
+      <?php
+      $q_featured = mysqli_query($conn, "SELECT * FROM lawyers WHERE status = 'Approved' ORDER BY lawyer_id DESC LIMIT 6");
+      if (mysqli_num_rows($q_featured) > 0) {
+          $delay = 0;
+          while ($row = mysqli_fetch_assoc($q_featured)) {
+              $l_id = (int)$row['lawyer_id'];
+              $name = htmlspecialchars($row['full_name']);
+              $spec = htmlspecialchars($row['specialization'] ?? 'General Practice');
+              $city = htmlspecialchars($row['city'] ?? 'Unknown City');
+              $exp  = (int)($row['experience'] ?? 0);
+              
+              $bio_full = trim($row['bio'] ?? 'Experienced legal professional dedicated to achieving the best outcomes.');
+              $bio = (strlen($bio_full) > 100) ? htmlspecialchars(substr($bio_full, 0, 97)) . '...' : htmlspecialchars($bio_full);
+              
+              if (!empty($row['profile_image'])) {
+                  $img_url = "uploads/" . htmlspecialchars($row['profile_image']);
+                  $img_html = "<div class='lawyer-card-img-placeholder' style=\"background:url('$img_url') center/cover no-repeat;\"></div>";
+              } else {
+                  $img_url = "https://ui-avatars.com/api/?name=".urlencode($name)."&background=1A2F60&color=C9A84C&size=200";
+                  $img_html = "<div class='lawyer-card-img-placeholder' style=\"background:url('$img_url') center/cover no-repeat;\"></div>";
+              }
+              
+              $rating = 4.8;
+              $reviews = rand(50, 300);
 
-      <!-- Lawyer 1 -->
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="0">
-        <div class="lawyer-card">
-          <div class="lawyer-card-img-placeholder"><i class="fas fa-user-tie"></i></div>
-          <div class="lawyer-card-body">
-            <div class="lawyer-card-specialty">Criminal Defense</div>
-            <h3 class="lawyer-card-name">Michael Kingston, Esq.</h3>
-            <p class="lawyer-card-bio">Over 18 years defending clients in high-profile criminal cases with an exceptional acquittal record.</p>
-            <div class="lawyer-card-rating">
-              <span class="stars">★★★★★</span>
-              <span style="font-size:0.82rem; font-weight:600; color:var(--white);">4.9</span>
-              <span style="font-size:0.78rem; color:var(--text-muted);">(234 reviews)</span>
-            </div>
-            <div class="lawyer-card-meta">
-              <span class="meta-item"><i class="fas fa-map-marker-alt"></i> New York, NY</span>
-              <span class="meta-item"><i class="fas fa-briefcase"></i> 18 yrs exp</span>
-            </div>
-            <div class="mt-3 d-flex gap-2">
-              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
-              <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lawyer 2 -->
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-        <div class="lawyer-card">
-          <div class="lawyer-card-img-placeholder" style="background:linear-gradient(135deg,#1A2F60,#0D1B3E);"><i class="fas fa-user-tie" style="opacity:0.8;"></i></div>
-          <div class="lawyer-card-body">
-            <div class="lawyer-card-specialty">Family & Divorce Law</div>
-            <h3 class="lawyer-card-name">Sarah Reynolds, Esq.</h3>
-            <p class="lawyer-card-bio">Compassionate advocate specializing in complex divorce and custody cases, protecting family rights.</p>
-            <div class="lawyer-card-rating">
-              <span class="stars">★★★★★</span>
-              <span style="font-size:0.82rem; font-weight:600; color:var(--white);">4.8</span>
-              <span style="font-size:0.78rem; color:var(--text-muted);">(189 reviews)</span>
-            </div>
-            <div class="lawyer-card-meta">
-              <span class="meta-item"><i class="fas fa-map-marker-alt"></i> Los Angeles, CA</span>
-              <span class="meta-item"><i class="fas fa-briefcase"></i> 14 yrs exp</span>
-            </div>
-            <div class="mt-3 d-flex gap-2">
-              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
-              <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lawyer 3 -->
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-        <div class="lawyer-card">
-          <div class="lawyer-card-img-placeholder" style="background:linear-gradient(135deg,#2a1a00,#1a1000);"><i class="fas fa-user-tie" style="opacity:0.8;"></i></div>
-          <div class="lawyer-card-body">
-            <div class="lawyer-card-specialty">Corporate Law</div>
-            <h3 class="lawyer-card-name">James Crawford, Esq.</h3>
-            <p class="lawyer-card-bio">Strategic corporate attorney advising Fortune 500 companies on mergers, acquisitions, and compliance.</p>
-            <div class="lawyer-card-rating">
-              <span class="stars">★★★★★</span>
-              <span style="font-size:0.82rem; font-weight:600; color:var(--white);">5.0</span>
-              <span style="font-size:0.78rem; color:var(--text-muted);">(302 reviews)</span>
-            </div>
-            <div class="lawyer-card-meta">
-              <span class="meta-item"><i class="fas fa-map-marker-alt"></i> Chicago, IL</span>
-              <span class="meta-item"><i class="fas fa-briefcase"></i> 22 yrs exp</span>
-            </div>
-            <div class="mt-3 d-flex gap-2">
-              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
-              <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lawyer 4 -->
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="0">
-        <div class="lawyer-card">
-          <div class="lawyer-card-img-placeholder" style="background:linear-gradient(135deg,#0d2a1a,#051a0d);"><i class="fas fa-user-tie" style="opacity:0.8;"></i></div>
-          <div class="lawyer-card-body">
-            <div class="lawyer-card-specialty">Property Law</div>
-            <h3 class="lawyer-card-name">David Winters, Esq.</h3>
-            <p class="lawyer-card-bio">Expert in real estate disputes, property transfers, and landlord-tenant litigation across 12 states.</p>
-            <div class="lawyer-card-rating">
-              <span class="stars">★★★★<i class="fas fa-star-half-alt" style="color:var(--gold);"></i></span>
-              <span style="font-size:0.82rem; font-weight:600; color:var(--white);">4.7</span>
-              <span style="font-size:0.78rem; color:var(--text-muted);">(145 reviews)</span>
-            </div>
-            <div class="lawyer-card-meta">
-              <span class="meta-item"><i class="fas fa-map-marker-alt"></i> Houston, TX</span>
-              <span class="meta-item"><i class="fas fa-briefcase"></i> 11 yrs exp</span>
-            </div>
-            <div class="mt-3 d-flex gap-2">
-              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
-              <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lawyer 5 -->
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-        <div class="lawyer-card">
-          <div class="lawyer-card-img-placeholder" style="background:linear-gradient(135deg,#1a1a2e,#16213e);"><i class="fas fa-user-tie" style="opacity:0.8;"></i></div>
-          <div class="lawyer-card-body">
-            <div class="lawyer-card-specialty">Civil Litigation</div>
-            <h3 class="lawyer-card-name">Elena Vasquez, Esq.</h3>
-            <p class="lawyer-card-bio">Dynamic litigator resolving complex civil disputes with precision strategy and courtroom expertise.</p>
-            <div class="lawyer-card-rating">
-              <span class="stars">★★★★★</span>
-              <span style="font-size:0.82rem; font-weight:600; color:var(--white);">4.9</span>
-              <span style="font-size:0.78rem; color:var(--text-muted);">(267 reviews)</span>
-            </div>
-            <div class="lawyer-card-meta">
-              <span class="meta-item"><i class="fas fa-map-marker-alt"></i> Miami, FL</span>
-              <span class="meta-item"><i class="fas fa-briefcase"></i> 16 yrs exp</span>
-            </div>
-            <div class="mt-3 d-flex gap-2">
-              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
-              <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Lawyer 6 -->
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-        <div class="lawyer-card">
-          <div class="lawyer-card-img-placeholder" style="background:linear-gradient(135deg,#2a0d0d,#1a0505);"><i class="fas fa-user-tie" style="opacity:0.8;"></i></div>
-          <div class="lawyer-card-body">
-            <div class="lawyer-card-specialty">Affidavit & Notary</div>
-            <h3 class="lawyer-card-name">Robert Chambers, Esq.</h3>
-            <p class="lawyer-card-bio">Swift and accurate affidavit drafting and notarization services for all legal document needs.</p>
-            <div class="lawyer-card-rating">
-              <span class="stars">★★★★<i class="fas fa-star-half-alt" style="color:var(--gold);"></i></span>
-              <span style="font-size:0.82rem; font-weight:600; color:var(--white);">4.6</span>
-              <span style="font-size:0.78rem; color:var(--text-muted);">(98 reviews)</span>
-            </div>
-            <div class="lawyer-card-meta">
-              <span class="meta-item"><i class="fas fa-map-marker-alt"></i> Phoenix, AZ</span>
-              <span class="meta-item"><i class="fas fa-briefcase"></i> 9 yrs exp</span>
-            </div>
-            <div class="mt-3 d-flex gap-2">
-              <a href="profile.php" class="btn-gold" style="padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;">View Profile</a>
-              <a href="#" class="btn-outline-gold" style="padding:10px 16px; font-size:0.78rem;"><i class="fas fa-phone"></i></a>
-            </div>
-          </div>
-        </div>
-      </div>
-
+              echo "<div class='col-lg-4 col-md-6' data-aos='fade-up' data-aos-delay='$delay'>";
+              echo "  <div class='lawyer-card'>";
+              echo      $img_html;
+              echo "    <div class='lawyer-card-body'>";
+              echo "      <div class='lawyer-card-specialty'>$spec</div>";
+              echo "      <h3 class='lawyer-card-name'>$name</h3>";
+              echo "      <p class='lawyer-card-bio'>$bio</p>";
+              echo "      <div class='lawyer-card-rating'>";
+              echo "        <span class='stars'>★★★★★</span>";
+              echo "        <span style='font-size:0.82rem; font-weight:600; color:var(--white);'>$rating</span>";
+              echo "        <span style='font-size:0.78rem; color:var(--text-muted);'>($reviews reviews)</span>";
+              echo "      </div>";
+              echo "      <div class='lawyer-card-meta'>";
+              echo "        <span class='meta-item'><i class='fas fa-map-marker-alt'></i> $city</span>";
+              echo "        <span class='meta-item'><i class='fas fa-briefcase'></i> $exp yrs exp</span>";
+              echo "      </div>";
+              echo "      <div class='mt-3 d-flex gap-2'>";
+              echo "        <a href='lawyer_profile.php?id=$l_id' class='btn-gold' style='padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;'>View Profile</a>";
+              echo "        <a href='book_appointment.php?id=$l_id' class='btn-outline-gold' style='padding:10px 16px; font-size:0.78rem;' title='Book Appointment'><i class='fas fa-calendar-check'></i></a>";
+              echo "      </div>";
+              echo "    </div>";
+              echo "  </div>";
+              echo "</div>";
+              
+              $delay += 100;
+              if($delay > 200) $delay = 0;
+          }
+      } else {
+          echo "<div class='col-12 text-center py-5' style='color:var(--text-muted);'>";
+          echo "  <h4>No featured lawyers available.</h4>";
+          echo "</div>";
+      }
+      ?>
     </div>
 
     <div class="text-center mt-5" data-aos="fade-up">
@@ -340,61 +247,38 @@ include_once 'includes/header.php';
     </div>
 
     <div class="row g-4">
+      <?php
+      $q_services = mysqli_query($conn, "SELECT * FROM services LIMIT 6");
+      if (mysqli_num_rows($q_services) > 0) {
+          $delay = 0;
+          while ($row = mysqli_fetch_assoc($q_services)) {
+              $name = htmlspecialchars($row['service_name']);
+              $desc = htmlspecialchars($row['description']);
+              $icon = htmlspecialchars($row['icon']);
+              if (empty($icon)) { $icon = "fa-scale-balanced"; }
+              if (strpos($icon, 'fa-') === 0 && strpos($icon, 'fas ') === false) {
+                  $icon = 'fas ' . $icon;
+              }
+              
+              $desc_short = (strlen($desc) > 100) ? substr($desc, 0, 97) . '...' : $desc;
+              $search_link = "search.php?spec=" . urlencode($name);
 
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="0">
-        <div class="service-card">
-          <div class="service-icon-wrapper"><i class="fas fa-gavel"></i></div>
-          <h4 class="service-title">Criminal Law</h4>
-          <p class="service-desc">Expert criminal defense attorneys who protect your rights and fight aggressively for your freedom in court.</p>
-          <a href="services.php#criminal" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-        <div class="service-card">
-          <div class="service-icon-wrapper"><i class="fas fa-scale-balanced"></i></div>
-          <h4 class="service-title">Civil Law</h4>
-          <p class="service-desc">Skilled civil litigators handling disputes, contracts, and torts with strategic legal solutions.</p>
-          <a href="services.php#civil" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-        <div class="service-card">
-          <div class="service-icon-wrapper"><i class="fas fa-ring"></i></div>
-          <h4 class="service-title">Divorce Law</h4>
-          <p class="service-desc">Compassionate divorce attorneys guiding you through separation, asset division, and custody agreements.</p>
-          <a href="services.php#divorce" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="0">
-        <div class="service-card">
-          <div class="service-icon-wrapper"><i class="fas fa-heart"></i></div>
-          <h4 class="service-title">Family Law</h4>
-          <p class="service-desc">Protecting family bonds through adoption, guardianship, custody, and domestic relations expertise.</p>
-          <a href="services.php#family" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="100">
-        <div class="service-card">
-          <div class="service-icon-wrapper"><i class="fas fa-house"></i></div>
-          <h4 class="service-title">Property Law</h4>
-          <p class="service-desc">Real estate attorneys handling purchases, disputes, title issues, and landlord-tenant conflicts.</p>
-          <a href="services.php#property" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-
-      <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="200">
-        <div class="service-card">
-          <div class="service-icon-wrapper"><i class="fas fa-building"></i></div>
-          <h4 class="service-title">Corporate Law</h4>
-          <p class="service-desc">Top-tier corporate counsel for startups and enterprises — contracts, M&amp;A, and compliance solutions.</p>
-          <a href="services.php#corporate" class="service-link">Explore Service <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-
+              echo "<div class='col-lg-4 col-md-6' data-aos='fade-up' data-aos-delay='$delay'>";
+              echo "  <div class='service-card'>";
+              echo "    <div class='service-icon-wrapper'><i class='$icon'></i></div>";
+              echo "    <h4 class='service-title'>$name</h4>";
+              echo "    <p class='service-desc'>$desc_short</p>";
+              echo "    <a href='$search_link' class='service-link'>Explore Lawyers <i class='fas fa-arrow-right'></i></a>";
+              echo "  </div>";
+              echo "</div>";
+              
+              $delay += 100;
+              if ($delay > 200) $delay = 0;
+          }
+      } else {
+          echo "<div class='col-12 text-center text-white py-5'><h4>No services available.</h4></div>";
+      }
+      ?>
     </div>
 
     <div class="text-center mt-5" data-aos="fade-up">

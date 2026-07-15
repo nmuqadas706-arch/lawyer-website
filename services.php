@@ -65,221 +65,63 @@ include_once 'includes/header.php';
   <div class="container">
     <div class="row g-4" id="servicesGrid">
 
-      <!-- 1. CRIMINAL LAW -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="criminal" id="criminal" data-aos="fade-up" data-aos-delay="0">
-        <div class="service-page-card">
-          <div class="service-num-overlay">01</div>
-          <div class="service-page-icon"><i class="fas fa-gavel"></i></div>
-          <h3 class="service-page-title">Criminal Law</h3>
-          <p class="service-page-desc">Our elite criminal defense attorneys bring unmatched courtroom experience to protect your freedom, rights, and future. From misdemeanor charges to complex federal cases, we fight with precision and tenacity.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> DUI & DWI Defense</li>
-            <li><i class="fas fa-check-circle"></i> Drug Charges & Trafficking</li>
-            <li><i class="fas fa-check-circle"></i> Assault & Battery Defense</li>
-            <li><i class="fas fa-check-circle"></i> White-Collar Crime</li>
-            <li><i class="fas fa-check-circle"></i> Federal Criminal Defense</li>
-            <li><i class="fas fa-check-circle"></i> Appeals & Post-Conviction</li>
-          </ul>
-          <a href="search.php?area=Criminal+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Criminal Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
+      <?php
+      $query = "SELECT * FROM services";
+      $result = mysqli_query($conn, $query);
+      $delay = 0;
 
-      <!-- 2. CIVIL LAW -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="civil" id="civil" data-aos="fade-up" data-aos-delay="100">
-        <div class="service-page-card">
-          <div class="service-num-overlay">02</div>
-          <div class="service-page-icon"><i class="fas fa-scale-balanced"></i></div>
-          <h3 class="service-page-title">Civil Law</h3>
-          <p class="service-page-desc">Navigate complex civil disputes with our seasoned litigators who expertly handle contract breaches, personal injury claims, and employment disputes with strategic precision and winning results.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> Contract Disputes & Breach</li>
-            <li><i class="fas fa-check-circle"></i> Personal Injury Claims</li>
-            <li><i class="fas fa-check-circle"></i> Employment Discrimination</li>
-            <li><i class="fas fa-check-circle"></i> Defamation & Libel</li>
-            <li><i class="fas fa-check-circle"></i> Medical Malpractice</li>
-            <li><i class="fas fa-check-circle"></i> Civil Rights Violations</li>
-          </ul>
-          <a href="search.php?area=Civil+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Civil Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
-
-      <!-- 3. DIVORCE LAW -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="family" id="divorce" data-aos="fade-up" data-aos-delay="200">
-        <div class="service-page-card">
-          <div class="service-num-overlay">03</div>
-          <div class="service-page-icon"><i class="fas fa-ring"></i></div>
-          <h3 class="service-page-title">Divorce Law</h3>
-          <p class="service-page-desc">Our compassionate divorce attorneys guide you through one of life's most challenging transitions with sensitivity and strength — protecting your assets, parental rights, and emotional well-being.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> Contested & Uncontested Divorce</li>
-            <li><i class="fas fa-check-circle"></i> Asset Division & Valuation</li>
-            <li><i class="fas fa-check-circle"></i> Spousal Support / Alimony</li>
-            <li><i class="fas fa-check-circle"></i> Child Custody & Visitation</li>
-            <li><i class="fas fa-check-circle"></i> High-Net-Worth Divorce</li>
-            <li><i class="fas fa-check-circle"></i> Collaborative Divorce</li>
-          </ul>
-          <a href="search.php?area=Divorce+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Divorce Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
-
-      <!-- 4. FAMILY LAW -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="family" id="family" data-aos="fade-up" data-aos-delay="0">
-        <div class="service-page-card">
-          <div class="service-num-overlay">04</div>
-          <div class="service-page-icon"><i class="fas fa-heart"></i></div>
-          <h3 class="service-page-title">Family Law</h3>
-          <p class="service-page-desc">Protecting family bonds and resolving domestic matters with empathy and expertise. Our family law attorneys handle sensitive cases with discretion, ensuring the best outcomes for all family members, especially children.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> Child Custody & Support</li>
-            <li><i class="fas fa-check-circle"></i> Adoption & Guardianship</li>
-            <li><i class="fas fa-check-circle"></i> Domestic Violence Protection</li>
-            <li><i class="fas fa-check-circle"></i> Prenuptial Agreements</li>
-            <li><i class="fas fa-check-circle"></i> Paternity Matters</li>
-            <li><i class="fas fa-check-circle"></i> Grandparents' Rights</li>
-          </ul>
-          <a href="search.php?area=Family+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Family Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
-
-      <!-- 5. PROPERTY LAW -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="property" id="property" data-aos="fade-up" data-aos-delay="100">
-        <div class="service-page-card">
-          <div class="service-num-overlay">05</div>
-          <div class="service-page-icon"><i class="fas fa-house"></i></div>
-          <h3 class="service-page-title">Property Law</h3>
-          <p class="service-page-desc">Your property rights are paramount. Our real estate attorneys handle every aspect of property law — from seamless transactions to complex title disputes — ensuring your real estate interests are fully protected.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> Real Estate Transactions</li>
-            <li><i class="fas fa-check-circle"></i> Title Search & Disputes</li>
-            <li><i class="fas fa-check-circle"></i> Landlord-Tenant Disputes</li>
-            <li><i class="fas fa-check-circle"></i> Property Boundary Conflicts</li>
-            <li><i class="fas fa-check-circle"></i> Foreclosure Defense</li>
-            <li><i class="fas fa-check-circle"></i> Easements & Rights-of-Way</li>
-          </ul>
-          <a href="search.php?area=Property+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Property Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
-
-      <!-- 6. AFFIDAVIT -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="civil" id="affidavit" data-aos="fade-up" data-aos-delay="200">
-        <div class="service-page-card">
-          <div class="service-num-overlay">06</div>
-          <div class="service-page-icon"><i class="fas fa-file-signature"></i></div>
-          <h3 class="service-page-title">Affidavit Services</h3>
-          <p class="service-page-desc">Fast, accurate, and legally compliant affidavit drafting and notarization. Our attorneys ensure every sworn statement is properly prepared, witnessed, and filed — giving you complete legal protection and peace of mind.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> General Affidavit Drafting</li>
-            <li><i class="fas fa-check-circle"></i> Financial Affidavits</li>
-            <li><i class="fas fa-check-circle"></i> Identity Affidavits</li>
-            <li><i class="fas fa-check-circle"></i> Notary Services</li>
-            <li><i class="fas fa-check-circle"></i> Affidavit of Support</li>
-            <li><i class="fas fa-check-circle"></i> Court-Filing Assistance</li>
-          </ul>
-          <a href="search.php?area=Affidavit" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Affidavit Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
-
-      <!-- 7. CORPORATE LAW -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="corporate" id="corporate" data-aos="fade-up" data-aos-delay="0">
-        <div class="service-page-card">
-          <div class="service-num-overlay">07</div>
-          <div class="service-page-icon"><i class="fas fa-building"></i></div>
-          <h3 class="service-page-title">Corporate Law</h3>
-          <p class="service-page-desc">Power your business with world-class corporate legal counsel. Our attorneys advise leading companies on strategic transactions, regulatory compliance, and risk management — from startup to Fortune 500.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> Business Formation & Structure</li>
-            <li><i class="fas fa-check-circle"></i> Mergers & Acquisitions</li>
-            <li><i class="fas fa-check-circle"></i> Corporate Governance</li>
-            <li><i class="fas fa-check-circle"></i> Commercial Contracts</li>
-            <li><i class="fas fa-check-circle"></i> Intellectual Property</li>
-            <li><i class="fas fa-check-circle"></i> Securities & Compliance</li>
-          </ul>
-          <a href="search.php?area=Corporate+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Corporate Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
-
-      <!-- 8. IMMIGRATION (BONUS) -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="civil" data-aos="fade-up" data-aos-delay="100">
-        <div class="service-page-card">
-          <div class="service-num-overlay">08</div>
-          <div class="service-page-icon"><i class="fas fa-globe-americas"></i></div>
-          <h3 class="service-page-title">Immigration Law</h3>
-          <p class="service-page-desc">Navigate the complexities of U.S. immigration with expert guidance. Our immigration attorneys handle visas, green cards, citizenship, deportation defense, and asylum claims with proven success rates.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> Visa Applications & Extensions</li>
-            <li><i class="fas fa-check-circle"></i> Green Card Petitions</li>
-            <li><i class="fas fa-check-circle"></i> Citizenship & Naturalization</li>
-            <li><i class="fas fa-check-circle"></i> Deportation Defense</li>
-            <li><i class="fas fa-check-circle"></i> Asylum Applications</li>
-            <li><i class="fas fa-check-circle"></i> DACA & TPS</li>
-          </ul>
-          <a href="search.php?area=Immigration+Law" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Immigration Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
-
-      <!-- 9. ESTATE PLANNING (BONUS) -->
-      <div class="col-lg-4 col-md-6 service-grid-item" data-category="civil" data-aos="fade-up" data-aos-delay="200">
-        <div class="service-page-card">
-          <div class="service-num-overlay">09</div>
-          <div class="service-page-icon"><i class="fas fa-scroll"></i></div>
-          <h3 class="service-page-title">Estate Planning</h3>
-          <p class="service-page-desc">Secure your legacy and protect your loved ones with comprehensive estate planning. Our attorneys craft ironclad wills, trusts, and powers of attorney tailored to your unique financial and family situation.</p>
-          <ul class="service-features">
-            <li><i class="fas fa-check-circle"></i> Wills & Testament Drafting</li>
-            <li><i class="fas fa-check-circle"></i> Living Trusts & Revocable Trusts</li>
-            <li><i class="fas fa-check-circle"></i> Power of Attorney</li>
-            <li><i class="fas fa-check-circle"></i> Probate Administration</li>
-            <li><i class="fas fa-check-circle"></i> Estate Tax Planning</li>
-            <li><i class="fas fa-check-circle"></i> Healthcare Directives</li>
-          </ul>
-          <a href="search.php?area=Estate+Planning" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-            <i class="fas fa-search"></i> Find Estate Lawyer
-          </a>
-          <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-            <i class="fas fa-phone"></i> Free Consultation
-          </a>
-        </div>
-      </div>
+      if(mysqli_num_rows($result) > 0) {
+          while($row = mysqli_fetch_assoc($result)) {
+              $service_name = htmlspecialchars($row['service_name'] ?? '');
+              $description = htmlspecialchars($row['description'] ?? '');
+              $fee = htmlspecialchars($row['fee'] ?? '');
+              $raw_icon = trim($row['icon'] ?? '');
+              if (empty($raw_icon)) {
+                  $icon = 'fas fa-balance-scale';
+              } else {
+                  // Prepend 'fas ' if the prefix is missing
+                  if (strpos($raw_icon, 'fas ') === false && strpos($raw_icon, 'fab ') === false && strpos($raw_icon, 'far ') === false) {
+                      // Ensure it has fa- prefix
+                      if (strpos($raw_icon, 'fa-') !== 0) {
+                          $raw_icon = 'fa-' . $raw_icon;
+                      }
+                      $raw_icon = 'fas ' . $raw_icon;
+                  }
+                  $icon = htmlspecialchars($raw_icon);
+              }
+              $button_text = htmlspecialchars($row['button_text'] ?? 'Find Lawyer');
+              
+              // Fallback to ID if service_number is not set
+              $service_number = isset($row['service_number']) ? htmlspecialchars($row['service_number']) : str_pad($row['service_id'] ?? '0', 2, '0', STR_PAD_LEFT);
+              
+              // Derive a simple category for the filter tabs (using the first word)
+              $category = strtolower(explode(' ', trim($service_name))[0]);
+              ?>
+              <div class="col-lg-4 col-md-6 service-grid-item" data-category="<?php echo $category; ?>" id="service-<?php echo $row['service_id'] ?? ''; ?>" data-aos="fade-up" data-aos-delay="<?php echo $delay; ?>">
+                <div class="service-page-card">
+                  <div class="service-num-overlay"><?php echo $service_number; ?></div>
+                  <div class="service-page-icon"><i class="<?php echo $icon; ?>"></i></div>
+                  <h3 class="service-page-title"><?php echo $service_name; ?></h3>
+                  <p class="service-page-desc"><?php echo $description; ?></p>
+                  <ul class="service-features">
+                    <li><i class="fas fa-check-circle"></i> Consultation Fee: PKR <?php echo $fee; ?></li>
+                  </ul>
+                  <a href="search.php?area=<?php echo urlencode($service_name); ?>" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
+                    <i class="fas fa-search"></i> <?php echo $button_text; ?>
+                  </a>
+                  <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
+                    <i class="fas fa-phone"></i> Free Consultation
+                  </a>
+                </div>
+              </div>
+              <?php
+              $delay += 100;
+              if($delay > 200) $delay = 0;
+          }
+      } else {
+          echo '<div class="col-12 text-center py-5"><h4 style="color:var(--white);">No services available.</h4></div>';
+      }
+      ?>
 
     </div>
   </div>

@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css"/>
   <!-- Luxury CSS -->
   <link rel="stylesheet" href="css/luxury.css"/>
+  
 </head>
 <body>
 
@@ -39,7 +40,7 @@
         <li class="nav-item"><a class="nav-link active" href="index.php">Home</a></li>
         <li class="nav-item"><a class="nav-link" href="about.php">About</a></li>
         <li class="nav-item"><a class="nav-link" href="services.php">Services</a></li>
-        <li class="nav-item"><a class="nav-link" href="#lawyers">Lawyers</a></li>
+        <li class="nav-item"><a class="nav-link" href="search.php">Lawyers</a></li>
         <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
         <li class="nav-item ms-lg-3">
           <a class="btn-outline-gold" href="lawyer-login.php" style="padding:10px 20px; font-size:0.78rem;">

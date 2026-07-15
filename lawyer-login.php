@@ -1,3 +1,31 @@
+<?php
+session_start();
+include_once 'includes/connection.php';
+
+if (isset($_POST['login'])) {
+
+    $email = $_POST['txt_email'];
+    $password = $_POST['txt_password'];
+
+    $query = "SELECT * FROM lawyers WHERE email='$email' AND password='$password'";
+    $result = mysqli_query($conn, $query);
+
+    if (mysqli_num_rows($result) > 0) {
+
+        $row = mysqli_fetch_assoc($result);
+
+        $_SESSION['lawyer_id'] = $row['lawyer_id'];
+        $_SESSION['lawyer_name'] = $row['full_name'];
+
+        header("Location: lawyerdashboard.php");
+        exit();
+
+    } else {
+        header("Location: lawyer-login.php");
+        exit();
+    }
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,7 +134,7 @@
         <p style="font-size:0.85rem; color:var(--text-muted);">Sign in to manage your practice dashboard</p>
       </div>
 
-      <form id="lawyerLoginForm" onsubmit="handleLogin(event)">
+      <form id="lawyerLoginForm" method="post">
         <!-- Email -->
         <div class="form-field-luxury">
           <label for="email">Registered Email</label>
@@ -133,28 +161,7 @@
           <i class="fas fa-sign-in-alt me-2"></i>Sign In to Dashboard
         </button>
       </form>
-      <?php
-     include_once 'includes/connection.php';
-      if(isset($_POST['login'])) {
-          $email = $_POST['txt_email'];
-          $password = $_POST['txt_password'];
-
-          $query = "SELECT * FROM lawyers WHERE email='$email' AND password='$password'";
-          $result = mysqli_query($conn, $query);
-
-          if(mysqli_num_rows($result) > 0) {
-              $row = mysqli_fetch_assoc($result);
-              session_start();
-              $_SESSION['lawyer_id'] = $row['id'];
-              $_SESSION['lawyer_name'] = $row['full_name'];
-              header("Location: lawyerdashboard.php");
-              exit();
-          } else {
-              echo "<div class='alert alert-danger'>Invalid email or password.</div>";
-          }
-      }
-      ?>
-
+    
       <!-- Switch Screen Link -->
       <div style="font-size:0.85rem; color:var(--text-muted); text-align:center; margin-top:2rem;">
         Not yet in the network? <a href="lawyer-register.php" style="color:var(--gold); font-weight:600; text-decoration:none;">Apply as an Attorney</a>
@@ -184,13 +191,7 @@
     setTimeout(() => $('#toastBox').fadeOut(400), 2500);
   }
 
-  function handleLogin(e) {
-    e.preventDefault();
-    showToast('Signed in successfully! Loading dashboard…');
-    setTimeout(() => {
-      window.location.href = 'lawyerdashboard.php';
-    }, 1500);
-  }
+ 
 </script>
 </body>
 </html>

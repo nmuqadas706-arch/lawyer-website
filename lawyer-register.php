@@ -106,13 +106,14 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+    
     }
   </style>
 </head>
 <body>
 
 <!-- Back to Home Link -->
-<a href="index.html" style="position:fixed; top:24px; left:24px; z-index:1000; display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; text-decoration:none; transition:var(--transition);" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">
+<a href="index.php" style="position:fixed; top:24px; left:24px; z-index:1000; display:inline-flex; align-items:center; gap:8px; color:rgba(255,255,255,0.7); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; text-decoration:none; transition:var(--transition);" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">
   <i class="fas fa-arrow-left"></i> Back to Home
 </a>
 
@@ -262,6 +263,7 @@
               <label for="officeAddress">Office Address</label>
               <input type="text" class="luxury-input form-control" name="txt_office_address" id="officeAddress" placeholder="e.g. 350 Fifth Avenue, Suite 4100" required>
             </div>
+            
           </div>
 
           <!-- Agreement Checkbox -->
@@ -329,6 +331,7 @@
        $office_address = $_POST['txt_office_address'];
        $profile_image = $_FILES['txt_profile_picture']['name'];
        $profile_image_tmp = $_FILES['txt_profile_picture']['tmp_name'];
+       
 
 
       move_uploaded_file($profile_image_tmp, "uploads/$profile_image");

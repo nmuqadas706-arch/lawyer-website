@@ -1,3 +1,13 @@
+<?php
+session_start();
+include_once 'includes/connection.php';
+
+$lawyer_id = $_SESSION['lawyer_id'];
+
+$query = mysqli_query($conn, "SELECT * FROM lawyers WHERE lawyer_id='$lawyer_id'");
+$lawyer = mysqli_fetch_assoc($query);
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -297,15 +307,31 @@
     </div>
 
     <!-- User Header Card -->
-    <div class="sidebar-user">
-      <div id="sideAvatarWrap" style="width:44px; height:44px; border-radius:50%; background:var(--gold-gradient); display:flex; align-items:center; justify-content:center; color:var(--dark); font-weight:800; font-size:1rem; flex-shrink:0; overflow:hidden;">
-        MK
-      </div>
-      <div>
-        <div style="font-size:0.85rem; font-weight:700; color:var(--white);" id="sideLawyerName">Michael Kingston, Esq.</div>
-        <div style="font-size:0.68rem; color:var(--gold); font-weight:600;" id="sideLawyerSpec">Criminal Law Specialist</div>
-      </div>
+<div class="sidebar-user"> 
+  
+
+<div id="sideAvatarWrap" style="width:44px; height:44px; border-radius:50%; background:var(--gold-gradient); display:flex; align-items:center; justify-content:center; color:var(--dark); font-weight:800; font-size:1rem; flex-shrink:0; overflow:hidden;">
+
+<?php if(!empty($lawyer['profile_image'])) { ?>
+    <img src="uploads/<?= $lawyer['profile_image']; ?>" style="width:100%;height:100%;object-fit:cover;">
+<?php } else { ?>
+    <?= strtoupper(substr($lawyer['full_name'],0,1)); ?>
+<?php } ?>
+
+</div>
+
+
+<div>
+    <div style="font-size:0.85rem;font-weight:700;color:var(--white);" id="sideLawyerName">
+        <?= $lawyer['full_name']; ?>
     </div>
+
+    <div style="font-size:0.68rem;color:var(--gold);font-weight:600;" id="sideLawyerSpec">
+        <?= $lawyer['specialization']; ?>
+    </div>
+</div>
+
+</div>
 
     <!-- Menu Links -->
     <div class="sidebar-menu">
@@ -353,7 +379,7 @@
         
         <!-- Welcome Jumbotron -->
         <div style="background:linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); border:1px solid rgba(201, 168, 76, 0.2); border-radius:12px; padding:2rem; margin-bottom:2rem;">
-          <h3 style="font-family:var(--font-serif); font-size:1.4rem; font-weight:700; color:var(--white); margin-bottom:0.4rem;" id="welcomeAttorneyName">Welcome, Attorney Michael Kingston</h3>
+          <h3 style="font-family:var(--font-serif); font-size:1.4rem; font-weight:700; color:var(--white); margin-bottom:0.4rem;" id="welcomeAttorneyName">Welcome, Attorney <?= $lawyer['full_name']; ?></h3>
           <p style="font-size:0.85rem; color:rgba(255, 255, 255, 0.7); margin:0;">
             You have <strong style="color:var(--gold)">2 pending requests</strong> awaiting review and <strong style="color:var(--gold)">3 upcoming consultations</strong> scheduled for this week.
           </p>
@@ -375,7 +401,9 @@
           </div>
           <div class="stat-box">
             <div class="stat-box-icon"><i class="fas fa-wallet"></i></div>
-            <div><div class="stat-box-val" id="statRateDisplay">$450</div><div class="stat-box-label">Hourly Rate</div></div>
+            <div><div class="stat-box-val" id="statRateDisplay">
+    $<?= $lawyer['consultation_fee']; ?>
+</div><div class="stat-box-label">Hourly Rate</div></div>
           </div>
         </div>
 
@@ -426,9 +454,7 @@
             <div class="dash-card text-center">
               <div class="dash-card-title" style="justify-content:center;">Profile Image</div>
               
-              <div class="round-headshot-preview">
-                <img src="" alt="Profile Image" id="profileHeadshotPreview">
-              </div>
+             
               
               <div class="photo-uploader-card" onclick="$('#headshotFile').click()">
                 <i class="fas fa-cloud-upload-alt" style="font-size:1.6rem; color:var(--gold); display:block; margin-bottom:8px;"></i>
@@ -443,103 +469,191 @@
           <div class="col-lg-8">
             <div class="dash-card">
               <div class="dash-card-title">Attorney Retainer Details</div>
-              <form id="profileForm" onsubmit="saveProfileDetails(event)">
+              <form id="profileForm" method="post" enctype="multipart/form-data">
+                 <div class="round-headshot-preview">
+            <img src="uploads/<?= $lawyer['profile_image']; ?>"
+id="profileHeadshotPreview">
+              </div>
                 <div class="row g-3">
                   <!-- Full Name -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profName">Full Name</label>
-                      <input type="text" class="luxury-input form-control" id="profName" required>
+                      <input type="text" name="profName" class="luxury-input form-control"
+id="profName"
+value="<?= $lawyer['full_name']; ?>" required>
                     </div>
                   </div>
                   <!-- Specialization -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profSpec">Specialization</label>
-                      <select class="luxury-input form-control" id="profSpec" style="background-color:var(--dark-card);" required>
-                        <option>Criminal Law</option>
-                        <option>Civil Law</option>
-                        <option>Divorce Law</option>
-                        <option>Family Law</option>
-                        <option>Property Law</option>
-                        <option>Corporate Law</option>
-                        <option>Affidavit</option>
-                        <option>Immigration Law</option>
-                        <option>Estate Planning</option>
-                      </select>
+                     <select class="luxury-input form-control" name="profSpec" id="profSpec" required>
+
+<option value="Criminal Law" <?= ($lawyer['specialization']=="Criminal Law")?"selected":""; ?>>Criminal Law</option>
+
+<option value="Civil Law" <?= ($lawyer['specialization']=="Civil Law")?"selected":""; ?>>Civil Law</option>
+
+<option value="Divorce Law" <?= ($lawyer['specialization']=="Divorce Law")?"selected":""; ?>>Divorce Law</option>
+
+<option value="Family Law" <?= ($lawyer['specialization']=="Family Law")?"selected":""; ?>>Family Law</option>
+
+<option value="Property Law" <?= ($lawyer['specialization']=="Property Law")?"selected":""; ?>>Property Law</option>
+
+<option value="Corporate Law" <?= ($lawyer['specialization']=="Corporate Law")?"selected":""; ?>>Corporate Law</option>
+
+<option value="Affidavit" <?= ($lawyer['specialization']=="Affidavit")?"selected":""; ?>>Affidavit</option>
+
+<option value="Immigration Law" <?= ($lawyer['specialization']=="Immigration Law")?"selected":""; ?>>Immigration Law</option>
+
+<option value="Estate Planning" <?= ($lawyer['specialization']=="Estate Planning")?"selected":""; ?>>Estate Planning</option>
+
+</select>
                     </div>
                   </div>
                   <!-- Qualification -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profQual">Qualification</label>
-                      <input type="text" class="luxury-input form-control" id="profQual" required>
+                      <input type="text" name="profQual" class="luxury-input form-control" id="profQual" required  value="<?= $lawyer['qualification']; ?>">
                     </div>
                   </div>
                   <!-- Experience -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profExp">Experience (Years)</label>
-                      <input type="number" class="luxury-input form-control" id="profExp" required>
+                      <input type="number" name="profExp" class="luxury-input form-control" id="profExp" required value="<?= $lawyer['experience']; ?>">
                     </div>
                   </div>
-                  <!-- Bar Council Number -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
-                      <label for="profBar">Bar Council Number</label>
-                      <input type="text" class="luxury-input form-control" id="profBar" required>
+                      <label for="profCnic">CNIC Number</label>
+
+<input type="text"
+       name="profCnic"
+       id="profCnic"
+       class="luxury-input form-control"
+       value="<?= $lawyer['cnic_no']; ?>"
+       required>
                     </div>
                   </div>
+              
                   <!-- Consultation Fee -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profFee">Consultation Fee (USD/hr)</label>
-                      <input type="number" class="luxury-input form-control" id="profFee" required>
+                      <input type="number" name="profFee" class="luxury-input form-control" id="profFee" required value="<?= $lawyer['consultation_fee']; ?>">
                     </div>
                   </div>
                   <!-- City -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profCity">City</label>
-                      <input type="text" class="luxury-input form-control" id="profCity" required>
+                      <input type="text" name="profCity" class="luxury-input form-control" id="profCity" required value="<?= $lawyer['city']; ?>">
                     </div>
                   </div>
                   <!-- Office Address -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profAddr">Office Address</label>
-                      <input type="text" class="luxury-input form-control" id="profAddr" required>
+                      <input type="text" name="profAddr" class="luxury-input form-control" id="profAddr" required value="<?= $lawyer['address']; ?>">
                     </div>
                   </div>
                   <!-- Email -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profEmail">Email Address</label>
-                      <input type="email" class="luxury-input form-control" id="profEmail" required>
+                      <input type="email" name="profEmail" class="luxury-input form-control" id="profEmail" required value="<?= $lawyer['email']; ?>">
                     </div>
                   </div>
                   <!-- Phone -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profPhone">Phone Number</label>
-                      <input type="tel" class="luxury-input form-control" id="profPhone" required>
+                      <input type="tel" name="profPhone" class="luxury-input form-control" id="profPhone" required value="<?= $lawyer['phone']; ?>">
                     </div>
                   </div>
                   <!-- Bio -->
                   <div class="col-12">
                     <div class="form-field-luxury">
                       <label for="profBio">Professional Biography</label>
-                      <textarea class="luxury-input form-control" id="profBio" rows="4" style="resize:vertical;" required></textarea>
+                    <textarea
+class="luxury-input form-control"
+name="profBio"
+id="profBio"
+rows="4"><?= $lawyer['bio']; ?></textarea>
                     </div>
                   </div>
                 </div>
-                <button type="submit" class="btn-gold mt-3" style="padding:12px 30px;"><i class="fas fa-save me-2"></i>Save Retainer Profile</button>
+                <button type="submit" name="submit" class="btn-gold mt-3" style="padding:12px 30px;"><i class="fas fa-save me-2"></i>Save Retainer Profile</button>
+                
               </form>
             </div>
           </div>
 
         </div>
       </div>
+      <?php
+
+if(isset($_POST['submit']))
+{
+    $name = $_POST['profName'];
+    $spec = $_POST['profSpec'];
+    $qual = $_POST['profQual'];
+    $exp = $_POST['profExp'];
+    $cnic = $_POST['profCnic'];
+    $fee = $_POST['profFee'];
+    $city = $_POST['profCity'];
+    $address = $_POST['profAddr'];
+    $email = $_POST['profEmail'];
+    $phone = $_POST['profPhone'];
+    $bio = $_POST['profBio'];
+
+    $update = "UPDATE lawyers SET
+        full_name='$name',
+        specialization='$spec',
+        qualification='$qual',
+        experience='$exp',
+        cnic_no='$cnic',
+        consultation_fee='$fee',
+        city='$city',
+        address='$address',
+        email='$email',
+        phone='$phone',
+        bio='$bio'
+        WHERE lawyer_id='$lawyer_id'";
+
+    if(mysqli_query($conn, $update))
+    {
+        echo "<script>alert('Profile Updated Successfully');</script>";
+        echo "<script>window.location='lawyerdashboard.php';</script>";
+    }
+    else
+    {
+        echo "<script>alert('Update Failed');</script>";
+    }
+}
+?>
+      
+      
+      
+        
+        
+        
+  
+
+      
+      
+        
+  
+      
+      
+      
+      
+      
+      
+      
+     
 
       <!-- ===================== PANEL: MANAGE SCHEDULE ===================== -->
       <div class="panel-section" id="panel-schedule">
@@ -608,21 +722,89 @@
           <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.5rem;">Review and action pending appointment requests from new clients.</p>
           
           <div style="overflow-x:auto;">
+            <?php
+
+$lawyer_id = $_SESSION['lawyer_id'];
+
+$request_query = mysqli_query($conn, "
+SELECT
+a.*,
+c.full_name AS customer_name,
+s.service_name
+FROM appointments a
+JOIN customers c ON a.customer_id = c.customer_id
+JOIN services s ON a.service_id = s.service_id
+JOIN lawyers l ON a.lawyer_id = l.lawyer_id
+WHERE a.lawyer_id='$lawyer_id'
+AND a.status='Pending'
+ORDER BY a.appointment_date ASC
+");
+
+?>
             <table class="lux-table">
-              <thead>
-                <tr>
-                  <th>Client</th>
-                  <th>Practice Area</th>
-                  <th>Requested Date</th>
-                  <th>Time Slot</th>
-                  <th>Mode</th>
-                  <th>Message</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="appointmentRequestsTable">
-                <!-- Filled by JS -->
-              </tbody>
+            <thead>
+    <tr>
+        <th>Client</th>
+        <th>Service</th>
+        <th>Date</th>
+        <th>Time</th>
+        <th>Mode</th>
+        <th>Action</th>
+    </tr>
+</thead>
+             <tbody id="appointmentRequestsTable">
+
+<?php
+
+if(mysqli_num_rows($request_query) > 0)
+{
+    while($row = mysqli_fetch_assoc($request_query))
+    {
+?>
+
+<tr>
+
+    <td><?= $row['customer_name']; ?></td>
+
+    <td><?= $row['service_name']; ?></td>
+
+    <td><?= $row['appointment_date']; ?></td>
+
+    <td><?= date("h:i A", strtotime($row['appointment_time'])); ?></td>
+
+    <td><?= $row['message']; ?></td>
+    
+
+    <td>
+        <a href="?accept=<?= $row['appointment_id']; ?>" class="btn btn-success btn-sm">
+            Accept
+        </a>
+
+        <a href="?reject=<?= $row['appointment_id']; ?>" class="btn btn-danger btn-sm">
+            Reject
+        </a>
+    </td>
+
+</tr>
+
+<?php
+    }
+}
+else
+{
+?>
+
+<tr>
+    <td colspan="6" style="text-align:center;">
+        No Pending Requests
+    </td>
+</tr>
+
+<?php
+}
+?>
+
+</tbody>
             </table>
           </div>
         </div>
@@ -635,6 +817,25 @@
           <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.5rem;">List of confirmed upcoming consultations. You can launch video sessions directly from here.</p>
           
           <div style="overflow-x:auto;">
+            <?php
+
+$upcoming_query = mysqli_query($conn, "
+SELECT
+a.*,
+c.full_name AS customer_name,
+s.service_name,
+l.consultation_fee
+FROM appointments a
+JOIN customers c ON a.customer_id = c.customer_id
+JOIN services s ON a.service_id = s.service_id
+JOIN lawyers l ON a.lawyer_id = l.lawyer_id
+WHERE a.lawyer_id='$lawyer_id'
+AND a.status='Confirmed'
+ORDER BY a.appointment_date ASC
+");
+
+?>
+
             <table class="lux-table">
               <thead>
                 <tr>
@@ -647,9 +848,55 @@
                   <th>Launch Session</th>
                 </tr>
               </thead>
-              <tbody id="upcomingAppointmentsTable">
-                <!-- Filled by JS -->
-              </tbody>
+             <tbody>
+
+<?php
+if(mysqli_num_rows($upcoming_query) > 0)
+{
+    while($row = mysqli_fetch_assoc($upcoming_query))
+    {
+?>
+
+<tr>
+
+    <td><?= $row['customer_name']; ?></td>
+
+    <td><?= $row['service_name']; ?></td>
+
+    <td><?= $row['appointment_date']; ?></td>
+
+    <td><?= date("h:i A", strtotime($row['appointment_time'])); ?></td>
+
+    <td><?= $row['message']; ?></td>
+
+    <td>Rs. <?= number_format($row['consultation_fee']); ?></td>
+
+    <td>
+        <a href="?complete=<?= $row['appointment_id']; ?>" class="btn btn-primary btn-sm">
+            Complete
+        </a>
+    </td>
+
+</tr>
+
+<?php
+    }
+}
+else
+{
+?>
+
+<tr>
+    <td colspan="7" style="text-align:center;">
+        No Upcoming Appointments
+    </td>
+</tr>
+
+<?php
+}
+?>
+
+</tbody>
             </table>
           </div>
         </div>
@@ -662,6 +909,25 @@
           <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.5rem;">History of completed sessions with billing details and ratings feedback.</p>
           
           <div style="overflow-x:auto;">
+            <?php
+
+$completed_query = mysqli_query($conn, "
+SELECT
+a.*,
+c.full_name AS customer_name,
+s.service_name,
+l.consultation_fee
+FROM appointments a
+JOIN customers c ON a.customer_id = c.customer_id
+JOIN services s ON a.service_id = s.service_id
+JOIN lawyers l ON a.lawyer_id = l.lawyer_id
+WHERE a.lawyer_id='$lawyer_id'
+AND a.status='Completed'
+ORDER BY a.appointment_date DESC
+");
+
+?>
+
             <table class="lux-table">
               <thead>
                 <tr>
@@ -673,9 +939,53 @@
                   <th>Client Review</th>
                 </tr>
               </thead>
-              <tbody id="completedAppointmentsTable">
-                <!-- Filled by JS -->
-              </tbody>
+            <tbody>
+
+<?php
+if(mysqli_num_rows($completed_query) > 0)
+{
+    while($row = mysqli_fetch_assoc($completed_query))
+    {
+?>
+
+<tr>
+
+    <td><?= $row['customer_name']; ?></td>
+
+    <td><?= $row['service_name']; ?></td>
+
+    <td><?= $row['appointment_date']; ?></td>
+
+    <td><?= date("h:i A", strtotime($row['appointment_time'])); ?></td>
+
+    <td><?= $row['message']; ?></td>
+
+    <td>Rs. <?= number_format($row['consultation_fee']); ?></td>
+
+    <td>
+        <span class="badge bg-success">Completed</span>
+    </td>
+
+</tr>
+
+<?php
+    }
+}
+else
+{
+?>
+
+<tr>
+    <td colspan="7" style="text-align:center;">
+        No Completed Appointments
+    </td>
+</tr>
+
+<?php
+}
+?>
+
+</tbody>
             </table>
           </div>
         </div>
@@ -703,24 +1013,7 @@
   const SCHEDULE_KEY = 'lexelite_lawyer_schedule';
 
   // Seed default lawyer profile
-  let lawyerProfile = JSON.parse(localStorage.getItem(PROFILE_KEY));
-  if (!lawyerProfile) {
-    lawyerProfile = {
-      name: 'Michael Kingston, Esq.',
-      spec: 'Criminal Law',
-      qual: 'J.D., Harvard Law School · LL.M., Criminal Justice',
-      exp: 18,
-      barNum: 'NY-2006-4412',
-      fee: 450,
-      city: 'New York, NY',
-      office: '350 Fifth Avenue, Suite 4100, New York, NY 10118',
-      email: 'm.kingston@lexelite.com',
-      phone: '+1 (212) 555-0199',
-      bio: 'Michael Kingston is one of New York\'s most formidable criminal defense attorneys, with 18 years of courtroom experience handling everything from misdemeanor charges to high-profile federal cases. A Harvard Law graduate, Michael brings a meticulous analytical approach and an aggressive advocacy style.',
-      headshot: 'https://randomuser.me/api/portraits/men/32.jpg'
-    };
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(lawyerProfile));
-  }
+
 
   // Seed default weekly schedule
   let weeklySchedule = JSON.parse(localStorage.getItem(SCHEDULE_KEY));
@@ -1032,3 +1325,47 @@
 </script>
 </body>
 </html>
+<?php
+
+if(isset($_GET['accept']))
+{
+    $id = $_GET['accept'];
+
+    mysqli_query($conn, "
+        UPDATE appointments
+        SET status='Confirmed'
+        WHERE appointment_id='$id'
+    ");
+
+    header("Location: lawyerdashboard.php");
+    exit();
+}
+
+if(isset($_GET['reject']))
+{
+    $id = $_GET['reject'];
+
+    mysqli_query($conn, "
+        UPDATE appointments
+        SET status='Cancelled'
+        WHERE appointment_id='$id'
+    ");
+
+    header("Location: lawyerdashboard.php");
+    exit();
+}
+if(isset($_GET['complete']))
+{
+    $id = $_GET['complete'];
+
+    mysqli_query($conn,"
+    UPDATE appointments
+    SET status='Completed'
+    WHERE appointment_id='$id'
+    ");
+
+    header("Location: lawyerdashboard.php");
+    exit();
+}
+
+?>

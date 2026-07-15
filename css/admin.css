@@ -297,6 +297,7 @@ body {
   transition: var(--transition);
 }
 
+
 .pagination-luxury .page-link:hover {
   background: rgba(201, 168, 76, 0.08);
   border-color: var(--gold);
@@ -335,3 +336,4 @@ body {
   .sidebar-overlay.open { display: block; }
   .dash-header { padding: 0 1rem; }
 }
+

@@ -295,126 +295,58 @@ function loadDashboardOverview() {
   $('#recentApptsTableBody').html(tblHtml);
 }
 
-// 2. Search Lawyers Page
+// 2. Search Lawyers Page filtering
 function loadSearchLawyers() {
   const query = $('#searchLawyerInput').val().toLowerCase();
   const spec = $('#filterSpecialization').val();
   const sort = $('#sortLawyers').val();
   
-  const rawLawyers = getLawyers();
-  // Filter active lawyers only (in case admin suspended some)
-  let lawyersList = rawLawyers.filter(l => (l.status || 'active') === 'active');
-
-  // Search by name
-  if (query) {
-    lawyersList = lawyersList.filter(l => l.name.toLowerCase().includes(query));
-  }
-
-  // Filter by Specialization
-  if (spec && spec !== 'all') {
-    lawyersList = lawyersList.filter(l => l.specialization === spec);
-  }
-
-  // Sort
-  if (sort === 'price-asc') {
-    lawyersList.sort((a, b) => a.price - b.price);
-  } else if (sort === 'price-desc') {
-    lawyersList.sort((a, b) => b.price - a.price);
-  } else if (sort === 'rating') {
-    lawyersList.sort((a, b) => b.rating - a.rating);
-  }
-
-  // Render cards
-  let cardsHtml = '';
-  lawyersList.forEach(l => {
-    const starStr = '★ '.repeat(Math.round(l.rating)) + '☆ '.repeat(5 - Math.round(l.rating));
-    const isFeatured = l.featured ? `<div class="lawyer-card-featured-badge">Featured</div>` : '';
-    
-    cardsHtml += `
-      <div class="col-md-6 col-xxl-4">
-        <div class="lawyer-card-luxury">
-          <div class="lawyer-card-img-wrap">
-            <img src="${l.image}" alt="${l.name}">
-            ${isFeatured}
-          </div>
-          <div class="lawyer-card-body">
-            <span class="lawyer-card-spec-tag">${l.specializationLabel || l.specialization}</span>
-            <h4 class="lawyer-card-title">${l.name}</h4>
-            <div class="lawyer-card-meta">
-              <span style="color:var(--gold);"><i class="fas fa-star me-1"></i>${l.rating} (${l.reviews} reviews)</span>
-              <span><i class="fas fa-map-marker-alt me-1"></i>${l.location}</span>
-            </div>
-            <p class="lawyer-card-bio">${l.bio}</p>
-            <div class="lawyer-card-stats">
-              <div class="lawyer-card-stat-item">
-                <div class="lawyer-card-stat-label">Win Rate</div>
-                <div class="lawyer-card-stat-val">${Math.round((l.wins / l.totalCases) * 100)}%</div>
-              </div>
-              <div class="lawyer-card-stat-item">
-                <div class="lawyer-card-stat-label">Experience</div>
-                <div class="lawyer-card-stat-val">${l.experience} Yrs</div>
-              </div>
-            </div>
-            <div class="lawyer-card-footer">
-              <div>
-                <span class="lawyer-card-price">$${l.price}</span>
-                <span style="font-size:0.72rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.05em; display:block;">per hour</span>
-              </div>
-              <button class="btn-gold" style="padding:10px 20px; font-size:0.75rem;" onclick="openBookingModal(${l.id})">
-                <i class="fas fa-calendar-alt me-2"></i>Book Consultation
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>`;
+  let $lawyers = $('.lawyer-item');
+  
+  // Filter by name and spec
+  $lawyers.each(function() {
+      let name = $(this).data('name') || '';
+      let itemSpec = $(this).data('spec') || '';
+      
+      let matchName = !query || name.includes(query);
+      let matchSpec = !spec || spec === 'all' || itemSpec.includes(spec.toLowerCase());
+      
+      if(matchName && matchSpec) {
+          $(this).show();
+      } else {
+          $(this).hide();
+      }
   });
 
-  if (!lawyersList.length) {
-    cardsHtml = `
-      <div class="col-12 text-center text-muted py-5">
-        <i class="fas fa-gavel mb-3" style="font-size:2.5rem; color:var(--gold); opacity:0.5;"></i>
-        <h5>No Attorneys Found</h5>
-        <p>Try refining your name query or selecting a different practice area filter.</p>
-      </div>`;
+  // Sort by price
+  if (sort === 'price-asc') {
+      let sorted = $lawyers.toArray().sort(function(a, b){
+          return parseInt($(a).data('price')) - parseInt($(b).data('price'));
+      });
+      $('#lawyersGridRow').append(sorted);
+  } else if (sort === 'price-desc') {
+      let sorted = $lawyers.toArray().sort(function(a, b){
+          return parseInt($(b).data('price')) - parseInt($(a).data('price'));
+      });
+      $('#lawyersGridRow').append(sorted);
   }
-
-  $('#lawyersGridRow').html(cardsHtml);
 }
 
+// Hook search events
+$(document).ready(function() {
+  $('#searchLawyerInput').on('keyup', loadSearchLawyers);
+  $('#filterSpecialization').on('change', loadSearchLawyers);
+  $('#sortLawyers').on('change', loadSearchLawyers);
+});
+
+
 // 3. Book Consultation Modal logic
-function openBookingModal(lawyerId) {
-  const lawyers = getLawyers();
-  const lawyer = lawyers.find(l => l.id === lawyerId);
-  if (!lawyer) return;
-
-  selectedBookingLawyer = lawyer;
-  selectedBookingDate = null;
-  selectedBookingTime = null;
-
-  $('#modalLawyerName').text(lawyer.name);
-  $('#modalLawyerSpec').text(lawyer.specializationLabel);
-  $('#modalLawyerImg').attr('src', lawyer.image);
-  $('#modalLawyerPrice').text(`$${lawyer.price}/hr`);
-
-  // Render Date Slots (e.g. Next 3 available days from lawyer.slots)
-  let datesHtml = '';
-  const slots = lawyer.slots || [];
-  slots.forEach((s, idx) => {
-    datesHtml += `
-      <div class="col-4">
-        <div class="slot-date-btn" id="slot-date-${idx}" onclick="selectBookingDate('${s.date}', ${idx})">
-          ${s.date}
-        </div>
-      </div>`;
-  });
-
-  if (!slots.length) {
-    datesHtml = '<div class="col-12 text-center text-danger font-weight-bold">No slots currently available.</div>';
-  }
-
-  $('#bookingModalDateRow').html(datesHtml);
-  $('#bookingModalTimeRow').html('<div class="col-12 text-center text-muted" style="font-size:0.8rem;">Please select a date first...</div>');
-  $('#caseDescriptionInput').val('');
+function openBookingModal(lawyerId, name, spec, price, img) {
+  $('#modalLawyerIdHidden').val(lawyerId);
+  $('#modalLawyerName').text(name);
+  $('#modalLawyerSpec').text(spec);
+  $('#modalLawyerImg').attr('src', img);
+  $('#modalLawyerPrice').text(`$${price}/hr`);
 
   // Open modal
   const bookingModal = new bootstrap.Modal(document.getElementById('bookingModal'));
@@ -529,33 +461,33 @@ function loadAppointmentsList() {
 function handleAppointmentFilter(btn) {
   $('.tab-filter-btn').removeClass('active');
   $(btn).addClass('active');
-  loadAppointmentsList();
+  
+  const filter = $(btn).data('filter') || 'all';
+  
+  if(filter === 'all') {
+      $('.appt-row').show();
+  } else {
+      $('.appt-row').hide();
+      $('.appt-row[data-status="' + filter + '"]').show();
+  }
 }
 
 // 5. Appointment Details Page
-function viewAppointment(apptId) {
-  const appts = getAppointments();
-  const appt = appts.find(a => a.id === apptId);
-  if (!appt) return;
-
-  currentViewingAppointmentId = apptId;
-  
-  // Load attorney stats
-  const lawyers = getLawyers();
-  const lawyer = lawyers.find(l => l.id === appt.lawyerId) || {};
+function viewAppointmentDetails(appt) {
+  currentViewingAppointmentId = appt.id;
 
   $('#detApptId').text(appt.id);
-  $('#detLawyerImg').attr('src', lawyer.image || 'https://via.placeholder.com/150');
-  $('#detLawyerName').text(appt.lawyerName);
-  $('#detLawyerSpec').text(appt.specialization);
-  $('#detLawyerLoc').text(lawyer.location || 'N/A');
-  $('#detLawyerMail').text(lawyer.email || 'attorney@lexelite.com');
+  $('#detLawyerImg').attr('src', appt.lawyer_img);
+  $('#detLawyerName').text(appt.lawyer_name);
+  $('#detLawyerSpec').text(appt.lawyer_spec);
+  $('#detLawyerLoc').text(appt.lawyer_city || 'N/A');
+  $('#detLawyerMail').text(appt.lawyer_email || 'attorney@lexelite.com');
 
   $('#detDate').text(appt.date);
   $('#detTime').text(appt.time);
-  $('#detFee').text(`$${appt.fee}.00`);
-  $('#detPayMethod').text(appt.paymentMethod || 'Visa ending in 9012');
-  $('#detBrief').text(appt.brief);
+  $('#detFee').text(`PKR ${appt.fee}`);
+  $('#detPayMethod').text('Visa ending in 9012'); // Mocked
+  $('#detBrief').text(appt.brief || 'No brief provided.');
 
   // Status badge update
   const status = appt.status || 'pending';
@@ -589,7 +521,6 @@ function viewAppointment(apptId) {
         <i class="fas fa-clipboard-check text-primary mb-2" style="font-size:1.8rem;"></i>
         <h6 style="color:var(--white); font-weight:700; margin-bottom:4px;">Session Completed</h6>
         <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:12px;">This consultation has ended. Retainer services are marked complete.</p>
-        <div style="color:var(--gold); font-size:0.95rem; font-style:italic;">"Masterful legal advisory" · Rating: ★ 5.0</div>
       </div>`).show();
     $('#detailsCancelBtn').hide();
   } else {
@@ -687,12 +618,9 @@ function saveSecurityPassword(event) {
 
 // ─── INITIALIZATION ───
 $(document).ready(function() {
-  seedInitialData();
-  syncProfileHeader();
-  loadDashboardOverview();
-
-  // Search filter event hooks
-  $('#searchLawyerInput').on('keyup', loadSearchLawyers);
-  $('#filterSpecialization').on('change', loadSearchLawyers);
-  $('#sortLawyers').on('change', loadSearchLawyers);
+  // Retain search tab after form submission
+  if (window.location.search.includes('search=')) {
+    switchTab('search-lawyers');
+  }
 });
+

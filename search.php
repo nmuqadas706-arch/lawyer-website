@@ -1,9 +1,64 @@
- <?php
+<?php
 include_once 'includes/connection.php';
 include_once 'includes/header.php';
 
+// 1. Fetch distinct dropdown options
+$q_specs = mysqli_query($conn, "SELECT DISTINCT specialization FROM lawyers WHERE status = 'Approved' AND specialization IS NOT NULL");
+$specs = [];
+while($r = mysqli_fetch_assoc($q_specs)) { if(!empty(trim($r['specialization']))) $specs[] = $r['specialization']; }
 
+$q_cities = mysqli_query($conn, "SELECT DISTINCT city FROM lawyers WHERE status = 'Approved' AND city IS NOT NULL");
+$cities = [];
+while($r = mysqli_fetch_assoc($q_cities)) { if(!empty(trim($r['city']))) $cities[] = $r['city']; }
 
+$q_stats = mysqli_query($conn, "SELECT MAX(consultation_fee) as max_fee, MAX(experience) as max_exp FROM lawyers WHERE status = 'Approved'");
+$stats = mysqli_fetch_assoc($q_stats);
+$max_fee_db = !empty($stats['max_fee']) ? (int)$stats['max_fee'] : 10000;
+$max_exp_db = !empty($stats['max_exp']) ? (int)$stats['max_exp'] : 30;
+
+// 2. Build PHP Dynamic Search Query
+$search_query = "";
+if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
+    $search = mysqli_real_escape_string($conn, $_GET['search']);
+    $search_query .= " AND (full_name LIKE '%$search%' OR specialization LIKE '%$search%' OR city LIKE '%$search%')";
+}
+if (isset($_GET['city']) && !empty(trim($_GET['city']))) {
+    $city_esc = mysqli_real_escape_string($conn, $_GET['city']);
+    $search_query .= " AND city = '$city_esc'";
+}
+if (isset($_GET['spec']) && !empty(trim($_GET['spec']))) {
+    $spec = mysqli_real_escape_string($conn, $_GET['spec']);
+    $search_query .= " AND specialization = '$spec'";
+}
+
+// 3. Fetch Lawyers
+$q_lawyers = mysqli_query($conn, "SELECT * FROM lawyers WHERE status = 'Approved' $search_query");
+$lawyers_data = [];
+while($row = mysqli_fetch_assoc($q_lawyers)) {
+    $img = !empty($row['profile_image']) ? htmlspecialchars($row['profile_image']) : '';
+    $lawyers_data[] = [
+        'id' => (int)$row['lawyer_id'],
+        'name' => htmlspecialchars($row['full_name']),
+        'qual' => htmlspecialchars($row['qualification'] ?? 'J.D. Law'),
+        'spec' => htmlspecialchars($row['specialization'] ?? 'General Practice'),
+        'exp' => (int)($row['experience'] ?? 0),
+        'city' => htmlspecialchars($row['city'] ?? 'Unknown City'),
+        'fee' => (int)($row['consultation_fee'] ?? 0),
+        'bio' => htmlspecialchars($row['bio'] ?? 'Experienced legal professional dedicated to achieving the best outcomes.'),
+        'status' => htmlspecialchars($row['status'] ?? 'Approved'),
+        'image' => $img,
+        // UI Defaults
+        'rating' => 4.8,
+        'reviews' => rand(20, 250),
+        'langs' => ['English'],
+        'freeConsult' => true,
+        'available' => true,
+        'topRated' => true,
+        'color1' => '#0D1B3E',
+        'color2' => '#1A2F60',
+        'tags' => []
+    ];
+}
 ?>
 
 <!-- ===================== SEARCH HERO ===================== -->
@@ -24,46 +79,44 @@ include_once 'includes/header.php';
           </p>
         </div>
 
-        <!-- 4-Field Search Bar -->
-        <div class="quad-search" data-aos="fade-up" data-aos-delay="100" id="mainSearchBar">
+        <!-- 4-Field Search Bar (PHP Driven Form) -->
+        <form class="quad-search" data-aos="fade-up" data-aos-delay="100" id="mainSearchBar" action="" method="GET">
           <div class="qs-field">
-            <i class="fas fa-user"></i>
-            <input type="text" id="searchName" placeholder="Search by name…" autocomplete="off"/>
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" id="searchName" placeholder="Search by name or keyword…" autocomplete="off" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>"/>
           </div>
           <div class="qs-field">
             <i class="fas fa-map-marker-alt"></i>
-            <input type="text" id="searchCity" placeholder="City or State…" autocomplete="off"/>
+            <select name="city" id="searchCity">
+              <option value="">All Cities</option>
+              <?php foreach($cities as $c): ?>
+                <option value="<?php echo htmlspecialchars($c); ?>" <?php if(isset($_GET['city']) && $_GET['city'] === $c) echo 'selected'; ?>><?php echo htmlspecialchars($c); ?></option>
+              <?php endforeach; ?>
+            </select>
           </div>
           <div class="qs-field">
             <i class="fas fa-gavel"></i>
-            <select id="searchSpec">
+            <select name="spec" id="searchSpec">
               <option value="">Specialization</option>
-              <option>Criminal Law</option>
-              <option>Civil Law</option>
-              <option>Divorce Law</option>
-              <option>Family Law</option>
-              <option>Property Law</option>
-              <option>Corporate Law</option>
-              <option>Affidavit</option>
-              <option>Immigration Law</option>
-              <option>Estate Planning</option>
-              <option>Tax Law</option>
+              <?php foreach($specs as $s): ?>
+                <option value="<?php echo htmlspecialchars($s); ?>" <?php if(isset($_GET['spec']) && $_GET['spec'] === $s) echo 'selected'; ?>><?php echo htmlspecialchars($s); ?></option>
+              <?php endforeach; ?>
             </select>
           </div>
           <div class="qs-field">
             <i class="fas fa-briefcase"></i>
-            <select id="searchExp">
+            <select name="exp" id="searchExp">
               <option value="">Experience Level</option>
-              <option value="0-5">0–5 Years (Junior)</option>
-              <option value="5-10">5–10 Years (Mid-Level)</option>
-              <option value="10-20">10–20 Years (Senior)</option>
-              <option value="20+">20+ Years (Expert)</option>
+              <option value="0-5" <?php if(isset($_GET['exp']) && $_GET['exp'] == '0-5') echo 'selected'; ?>>0–5 Years (Junior)</option>
+              <option value="5-10" <?php if(isset($_GET['exp']) && $_GET['exp'] == '5-10') echo 'selected'; ?>>5–10 Years (Mid-Level)</option>
+              <option value="10-20" <?php if(isset($_GET['exp']) && $_GET['exp'] == '10-20') echo 'selected'; ?>>10–20 Years (Senior)</option>
+              <option value="20+" <?php if(isset($_GET['exp']) && $_GET['exp'] == '20+') echo 'selected'; ?>>20+ Years (Expert)</option>
             </select>
           </div>
-          <button class="qs-btn" id="searchBtn" onclick="runSearch()">
+          <button type="submit" class="qs-btn" id="searchBtn">
             <i class="fas fa-search"></i> Search
           </button>
-        </div>
+        </form>
 
         <!-- Active search tags -->
         <div id="searchTags" class="mt-3 d-flex flex-wrap gap-2" data-aos="fade-up" data-aos-delay="150"></div>
@@ -117,14 +170,9 @@ include_once 'includes/header.php';
           <!-- Practice Area -->
           <div class="filter-group">
             <div class="filter-label-title"><i class="fas fa-gavel"></i> Practice Area</div>
-            <label class="custom-check"><input type="checkbox" class="fArea" value="Criminal Law"><span class="check-box"></span><span class="check-label">Criminal Law</span></label>
-            <label class="custom-check"><input type="checkbox" class="fArea" value="Civil Law"><span class="check-box"></span><span class="check-label">Civil Law</span></label>
-            <label class="custom-check"><input type="checkbox" class="fArea" value="Divorce Law"><span class="check-box"></span><span class="check-label">Divorce Law</span></label>
-            <label class="custom-check"><input type="checkbox" class="fArea" value="Family Law"><span class="check-box"></span><span class="check-label">Family Law</span></label>
-            <label class="custom-check"><input type="checkbox" class="fArea" value="Property Law"><span class="check-box"></span><span class="check-label">Property Law</span></label>
-            <label class="custom-check"><input type="checkbox" class="fArea" value="Corporate Law"><span class="check-box"></span><span class="check-label">Corporate Law</span></label>
-            <label class="custom-check"><input type="checkbox" class="fArea" value="Immigration Law"><span class="check-box"></span><span class="check-label">Immigration Law</span></label>
-            <label class="custom-check"><input type="checkbox" class="fArea" value="Affidavit"><span class="check-box"></span><span class="check-label">Affidavit</span></label>
+            <?php foreach($specs as $s): ?>
+              <label class="custom-check"><input type="checkbox" class="fArea" value="<?php echo htmlspecialchars($s); ?>"><span class="check-box"></span><span class="check-label"><?php echo htmlspecialchars($s); ?></span></label>
+            <?php endforeach; ?>
           </div>
           <hr class="filter-divider"/>
 
@@ -134,10 +182,10 @@ include_once 'includes/header.php';
             <div class="d-flex justify-content-between mb-1">
               <span class="range-display" id="expDisplay">Any</span>
             </div>
-            <input type="range" class="luxury-range" id="expRange" min="0" max="25" value="0" step="1" oninput="updateRange(this,'expDisplay','expVal',v=>v==0?'Any':v+' yrs')">
+            <input type="range" class="luxury-range" id="expRange" min="0" max="<?php echo $max_exp_db; ?>" value="0" step="1" oninput="updateRange(this,'expDisplay','expVal',v=>v==0?'Any':v+' yrs')">
             <input type="hidden" id="expVal" value="0">
             <div class="d-flex justify-content-between mt-1" style="font-size:.7rem;color:var(--text-muted);">
-              <span>0 yrs</span><span>25 yrs</span>
+              <span>0 yrs</span><span><?php echo $max_exp_db; ?> yrs</span>
             </div>
           </div>
           <hr class="filter-divider"/>
@@ -146,12 +194,12 @@ include_once 'includes/header.php';
           <div class="filter-group">
             <div class="filter-label-title"><i class="fas fa-dollar-sign"></i> Max Consultation Fee</div>
             <div class="d-flex justify-content-between mb-1">
-              <span class="range-display" id="feeDisplay">$600</span>
+              <span class="range-display" id="feeDisplay">Rs <?php echo $max_fee_db; ?></span>
             </div>
-            <input type="range" class="luxury-range" id="feeRange" min="100" max="600" value="600" step="10" oninput="updateRange(this,'feeDisplay','feeVal',v=>'$'+v+(v==600?'+':''))">
-            <input type="hidden" id="feeVal" value="600">
+            <input type="range" class="luxury-range" id="feeRange" min="0" max="<?php echo $max_fee_db; ?>" value="<?php echo $max_fee_db; ?>" step="500" oninput="updateRange(this,'feeDisplay','feeVal',v=>'Rs '+v+(v==<?php echo $max_fee_db; ?>?'+':''))">
+            <input type="hidden" id="feeVal" value="<?php echo $max_fee_db; ?>">
             <div class="d-flex justify-content-between mt-1" style="font-size:.7rem;color:var(--text-muted);">
-              <span>$100</span><span>$600+</span>
+              <span>Rs 0</span><span>Rs <?php echo $max_fee_db; ?>+</span>
             </div>
           </div>
           <hr class="filter-divider"/>
@@ -302,24 +350,7 @@ include_once 'includes/header.php';
 AOS.init({ duration: 700, easing: 'ease-out-cubic', once: true, offset: 40 });
 
 // ──────────────── LAWYER DATA ────────────────
-const LAWYERS = [
-  { id:1,  name:'Michael Kingston',   qual:'J.D., Harvard Law School',         spec:'Criminal Law',      exp:18, city:'New York, NY',      fee:450, rating:4.9, reviews:234, langs:['English','Spanish'], freeConsult:true,  available:true,  topRated:true,  initials:'MK', color1:'#0D1B3E', color2:'#1A2F60', tags:['DUI Defense','Federal Cases','Appeals'] },
-  { id:2,  name:'Sarah Reynolds',     qual:'J.D., Yale Law School',            spec:'Divorce Law',       exp:14, city:'Los Angeles, CA',   fee:380, rating:4.8, reviews:189, langs:['English','French'],  freeConsult:true,  available:true,  topRated:true,  initials:'SR', color1:'#1A2F60', color2:'#142450', tags:['Child Custody','Asset Division','Mediation'] },
-  { id:3,  name:'James Crawford',     qual:'J.D., Columbia Law School',        spec:'Corporate Law',     exp:22, city:'Chicago, IL',       fee:580, rating:5.0, reviews:302, langs:['English'],            freeConsult:false, available:true,  topRated:true,  initials:'JC', color1:'#2a1a00', color2:'#1a1000', tags:['M&A','Governance','Compliance'] },
-  { id:4,  name:'David Winters',      qual:'J.D., University of Texas',        spec:'Property Law',      exp:11, city:'Houston, TX',       fee:320, rating:4.7, reviews:145, langs:['English','Spanish'],  freeConsult:true,  available:false, topRated:false, initials:'DW', color1:'#0d2a1a', color2:'#051a0d', tags:['Real Estate','Title Disputes','Foreclosure'] },
-  { id:5,  name:'Elena Vasquez',      qual:'J.D., Stanford Law School',        spec:'Civil Law',         exp:16, city:'Miami, FL',         fee:420, rating:4.9, reviews:267, langs:['English','Spanish','Portuguese'], freeConsult:true, available:true, topRated:true, initials:'EV', color1:'#1a1a2e', color2:'#16213e', tags:['Personal Injury','Employment','Civil Rights'] },
-  { id:6,  name:'Robert Chambers',    qual:'J.D., Boston University',          spec:'Affidavit',         exp: 9, city:'Phoenix, AZ',       fee:180, rating:4.6, reviews: 98, langs:['English'],            freeConsult:true,  available:true,  topRated:false, initials:'RC', color1:'#2a0d0d', color2:'#1a0505', tags:['Affidavit Drafting','Notary','Document Filing'] },
-  { id:7,  name:'Priya Nair',         qual:'J.D., Georgetown University',      spec:'Immigration Law',   exp:13, city:'San Francisco, CA', fee:350, rating:4.8, reviews:211, langs:['English','Hindi','Tamil'], freeConsult:true, available:true, topRated:true,  initials:'PN', color1:'#1a0d2a', color2:'#12071a', tags:['Visas','Green Card','Deportation Defense'] },
-  { id:8,  name:'Thomas Adler',       qual:'J.D., NYU School of Law',          spec:'Tax Law',           exp:20, city:'New York, NY',      fee:520, rating:4.7, reviews:178, langs:['English','German'],   freeConsult:false, available:false, topRated:false, initials:'TA', color1:'#0a1a2a', color2:'#051015', tags:['IRS Disputes','Corporate Tax','Estate Tax'] },
-  { id:9,  name:'Lisa Fontaine',      qual:'J.D., Duke University School of Law', spec:'Family Law',    exp: 7, city:'Charlotte, NC',     fee:280, rating:4.5, reviews:132, langs:['English','French'],   freeConsult:true,  available:true,  topRated:false, initials:'LF', color1:'#1a0a1a', color2:'#10060f', tags:['Adoption','Guardianship','Child Support'] },
-  { id:10, name:'Marcus Washington',  qual:'J.D., Howard University School of Law', spec:'Criminal Law', exp:24, city:'Washington, DC',   fee:500, rating:4.9, reviews:389, langs:['English'],            freeConsult:false, available:true,  topRated:true,  initials:'MW', color1:'#0d1a0d', color2:'#071207', tags:['Federal Defense','White-Collar Crime','Appeals'] },
-  { id:11, name:'Natalie Kim',        qual:'J.D., University of Chicago',      spec:'Corporate Law',     exp:12, city:'Seattle, WA',       fee:460, rating:4.8, reviews:156, langs:['English','Mandarin','Korean'], freeConsult:true, available:true, topRated:true,  initials:'NK', color1:'#0d1225', color2:'#080d18', tags:['Startups','IP','Commercial Contracts'] },
-  { id:12, name:'Carlos Mendez',      qual:'J.D., University of Miami',        spec:'Property Law',      exp: 8, city:'Miami, FL',         fee:260, rating:4.4, reviews: 89, langs:['English','Spanish'],  freeConsult:true,  available:false, topRated:false, initials:'CM', color1:'#1a1000', color2:'#0d0a00', tags:['Landlord-Tenant','Title Search','HOA Disputes'] },
-  { id:13, name:'Grace O\'Sullivan',  qual:'J.D., Fordham University',         spec:'Divorce Law',       exp: 6, city:'Boston, MA',        fee:300, rating:4.6, reviews:104, langs:['English','Irish'],    freeConsult:true,  available:true,  topRated:false, initials:'GO', color1:'#0a1520', color2:'#060d15', tags:['Uncontested Divorce','Mediation','Custody'] },
-  { id:14, name:'Ahmed Al-Hassan',    qual:'J.D., Georgetown University',      spec:'Civil Law',         exp:19, city:'Dallas, TX',        fee:440, rating:4.7, reviews:223, langs:['English','Arabic'],   freeConsult:false, available:true,  topRated:true,  initials:'AH', color1:'#1a1200', color2:'#0d0900', tags:['Contracts','Torts','Defamation'] },
-  { id:15, name:'Sophia Chen',        qual:'J.D., UC Berkeley School of Law',  spec:'Immigration Law',   exp:10, city:'Los Angeles, CA',   fee:330, rating:4.9, reviews:198, langs:['English','Mandarin','Cantonese'], freeConsult:true, available:true, topRated:true,  initials:'SC', color1:'#0a2020', color2:'#061515', tags:['Asylum','DACA','Family Petitions'] },
-  { id:16, name:'William Harrington', qual:'J.D., Vanderbilt University',      spec:'Estate Planning',   exp:15, city:'Nashville, TN',     fee:390, rating:4.6, reviews:142, langs:['English'],            freeConsult:true,  available:false, topRated:false, initials:'WH', color1:'#1a0d05', color2:'#0d0803', tags:['Wills & Trusts','Probate','Power of Attorney'] },
-];
+const LAWYERS = <?php echo json_encode($lawyers_data); ?>;
 
 // ──────────────── STATE ────────────────
 let filtered = [...LAWYERS];
@@ -341,12 +372,12 @@ function starsHtml(r) {
 function renderListCard(l) {
   return `
   <div class="lawyer-search-card mb-3 animate-on-scroll" style="border-radius:14px;">
-    <div class="lsc-photo" style="background:linear-gradient(135deg,${l.color1},${l.color2});">
-      <i class="fas fa-user-tie"></i>
+    <div class="lsc-photo" style="${l.image ? `background:url('${l.image}') center/cover;` : `background:linear-gradient(135deg,${l.color1},${l.color2});`}">
+      ${l.image ? '' : '<i class="fas fa-user-tie"></i>'}
       <div class="verified-badge"><i class="fas fa-check"></i></div>
     </div>
     <div class="lsc-body">
-      <div class="lsc-specialty">${l.spec}</div>
+      <div class="lsc-specialty">${l.spec} <span class="badge bg-success ms-2" style="font-size:0.6rem;">${l.status}</span></div>
       <div class="lsc-name">${l.name}</div>
       <div class="lsc-qual"><i class="fas fa-graduation-cap me-1" style="color:var(--gold);font-size:.72rem;"></i>${l.qual}</div>
       <div class="lsc-meta">
@@ -358,12 +389,12 @@ function renderListCard(l) {
       </div>
       <div class="lsc-tags">
         ${l.langs.map(lg=>`<span class="lsc-tag"><i class="fas fa-language me-1" style="font-size:.62rem;"></i>${lg}</span>`).join('')}
-        ${l.tags.slice(0,2).map(t=>`<span class="lsc-tag">${t}</span>`).join('')}
       </div>
+      <div class="mt-2" style="font-size:0.8rem; color:var(--text-muted);">${l.bio}</div>
       <!-- Mobile CTA -->
-      <div class="lsc-actions-inline d-lg-none">
-        <a href="profile.php?id=${l.id}" class="btn-gold" style="padding:9px 18px;font-size:.75rem;flex:1;justify-content:center;"><i class="fas fa-user"></i> View Profile</a>
-        <a href="#" class="btn-outline-gold" style="padding:9px 14px;font-size:.75rem;"><i class="fas fa-phone"></i></a>
+      <div class="lsc-actions-inline d-lg-none mt-2">
+        <a href="lawyer_profile.php?id=${l.id}" class="btn-gold" style="padding:9px 18px;font-size:.75rem;flex:1;justify-content:center;"><i class="fas fa-user"></i> View Profile</a>
+        <a href="book_appointment.php?id=${l.id}" class="btn-outline-gold" style="padding:9px 14px;font-size:.75rem;"><i class="fas fa-calendar-check"></i></a>
       </div>
     </div>
     <div class="lsc-right d-none d-lg-flex">
@@ -374,11 +405,11 @@ function renderListCard(l) {
       </div>
       <div class="lsc-fee-wrap">
         <div class="lsc-fee-label">Consultation</div>
-        <div class="lsc-fee">$${l.fee}<span style="font-size:.7rem;font-weight:400;color:var(--text-muted);">/hr</span></div>
+        <div class="lsc-fee">Rs ${l.fee}</div>
       </div>
       <div class="lsc-actions">
-        <a href="profile.php?id=${l.id}" class="btn-gold" style="padding:10px 16px;font-size:.75rem;justify-content:center;"><i class="fas fa-user"></i> View Profile</a>
-        <a href="#" class="btn-outline-gold" style="padding:9px 14px;font-size:.75rem;justify-content:center;"><i class="fas fa-phone me-1"></i> Contact</a>
+        <a href="lawyer_profile.php?id=${l.id}" class="btn-gold" style="padding:10px 16px;font-size:.75rem;justify-content:center;"><i class="fas fa-user"></i> View Profile</a>
+        <a href="book_appointment.php?id=${l.id}" class="btn-outline-gold" style="padding:9px 14px;font-size:.75rem;justify-content:center;"><i class="fas fa-calendar-check me-1"></i> Book Appointment</a>
       </div>
     </div>
   </div>`;
@@ -388,33 +419,33 @@ function renderGridCard(l) {
   return `
   <div class="col-md-6 col-lg-4 mb-3">
     <div class="lawyer-grid-card">
-      <div class="lgc-photo" style="background:linear-gradient(135deg,${l.color1},${l.color2});">
-        <i class="fas fa-user-tie"></i>
+      <div class="lgc-photo" style="${l.image ? `background:url('${l.image}') center/cover;` : `background:linear-gradient(135deg,${l.color1},${l.color2});`}">
+        ${l.image ? '' : '<i class="fas fa-user-tie"></i>'}
         <span class="lgc-badge-verified"><i class="fas fa-check me-1"></i>Verified</span>
         <span class="lgc-rating-pill">${starsHtml(l.rating)} ${l.rating}</span>
       </div>
       <div class="lgc-body">
-        <div class="lgc-specialty">${l.spec}</div>
+        <div class="lgc-specialty">${l.spec} <span class="badge bg-success float-end" style="font-size:0.6rem;">${l.status}</span></div>
         <div class="lgc-name">${l.name}</div>
         <div class="lgc-qual"><i class="fas fa-graduation-cap me-1" style="color:var(--gold);font-size:.68rem;"></i>${l.qual}</div>
         <div class="lgc-meta">
           <span class="lgc-meta-item"><i class="fas fa-map-marker-alt"></i>${l.city}</span>
           <span class="lgc-meta-item"><i class="fas fa-briefcase"></i>${l.exp} years experience</span>
-          <span class="lgc-meta-item"><i class="fas fa-comment-dots"></i>${l.reviews} client reviews</span>
-          <span class="lgc-meta-item"><i class="fas fa-language"></i>${l.langs.join(', ')}</span>
+        </div>
+        <div class="mt-2 mb-2" style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
+          ${l.bio ? (l.bio.length > 70 ? l.bio.substring(0,70)+'...' : l.bio) : 'Experienced legal professional.'}
         </div>
         <hr class="lgc-divider"/>
         <div class="lgc-fee-row">
           <div>
             <div class="lgc-fee-label">Consultation Fee</div>
-            <div class="lgc-fee">$${l.fee}<span style="font-size:.7rem;font-weight:400;color:var(--text-muted);">/hr</span></div>
+            <div class="lgc-fee">Rs ${l.fee}</div>
           </div>
           <div style="text-align:right;">
-            ${l.freeConsult ? '<span style="font-size:.68rem;font-weight:600;color:#4ade80;background:rgba(74,222,128,.08);border:1px solid rgba(74,222,128,.2);padding:3px 8px;border-radius:50px;">Free Initial</span>' : ''}
-            ${l.available ? '<br><span style="font-size:.68rem;font-weight:600;color:#4ade80;"><i class="fas fa-circle" style="font-size:.45rem;"></i> Available</span>' : ''}
+            <a href="book_appointment.php?lawyer_id=${l.id}" class="btn-outline-gold" style="padding:4px 8px;font-size:.7rem;"><i class="fas fa-calendar-check me-1"></i> Book</a>
           </div>
         </div>
-        <a href="profile.php?id=${l.id}" class="btn-gold w-100" style="justify-content:center;padding:11px;font-size:.78rem;">
+        <a href="lawyer_profile.php?id=${l.id}" class="btn-gold w-100 mt-2" style="justify-content:center;padding:11px;font-size:.78rem;">
           <i class="fas fa-user me-2"></i>View Full Profile
         </a>
       </div>
@@ -479,7 +510,7 @@ function applyFilters() {
   const spec   = $('#searchSpec').val();
   const expRng = $('#searchExp').val();
   const minRat = parseFloat($('input[name=fRating]:checked').val()) || 0;
-  const maxFee = parseInt($('#feeVal').val()) || 600;
+  const maxFee = parseInt($('#feeVal').val()) || <?php echo $max_fee_db; ?>;
   const minExp = parseInt($('#expVal').val()) || 0;
   const areas  = $('.fArea:checked').map((_,e)=>e.value).get();
   const langs  = $('.fLang:checked').map((_,e)=>e.value).get();
@@ -498,7 +529,7 @@ function applyFilters() {
       if (expRng==='20+'  && l.exp<20) return false;
     }
     if (l.rating < minRat) return false;
-    if (l.fee > maxFee && maxFee < 600) return false;
+    if (l.fee > maxFee && maxFee < <?php echo $max_fee_db; ?>) return false;
     if (l.exp < minExp) return false;
     if (areas.length && !areas.includes(l.spec)) return false;
     if (langs.length && !langs.some(lg=>l.langs.includes(lg))) return false;
@@ -527,7 +558,7 @@ function clearAllFilters() {
   $('input[name=fRating][value=0]').prop('checked',true);
   $('.fArea,.fLang,#fFreeConsult,#fAvailableNow,#fTopRated').prop('checked',false);
   $('#expRange').val(0); updateRange($('#expRange')[0],'expDisplay','expVal',v=>v==0?'Any':v+' yrs');
-  $('#feeRange').val(600); updateRange($('#feeRange')[0],'feeDisplay','feeVal',v=>'$'+v+(v==600?'+':''));
+  $('#feeRange').val(<?php echo $max_fee_db; ?>); updateRange($('#feeRange')[0],'feeDisplay','feeVal',v=>'Rs '+v+(v==<?php echo $max_fee_db; ?>?'+':''));
   filtered = [...LAWYERS];
   currentPage = 1;
   sortAndRender();
