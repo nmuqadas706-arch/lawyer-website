@@ -29,11 +29,29 @@ if (isset($_POST['update_profile'])) {
     $gender    = mysqli_real_escape_string($conn, trim($_POST['gender'] ?? ''));
     $address   = mysqli_real_escape_string($conn, trim($_POST['address'] ?? ''));
 
+    $errors = [];
+    if (empty($full_name) || strlen($full_name) < 3) {
+        $errors[] = "Full Name must be at least 3 characters long.";
+    }
+    if (empty($phone) || !preg_match('/^[0-9+\-\s]{10,15}$/', $phone)) {
+        $errors[] = "Please enter a valid phone number (10-15 digits).";
+    }
+    if (empty($gender)) {
+        $errors[] = "Please select a gender.";
+    }
+    if (empty($address) || strlen($address) < 5) {
+        $errors[] = "Address must be at least 5 characters long.";
+    }
+
     $img_field = '';
     if (!empty($_FILES['profile_image']['name'])) {
         $ext       = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
         $allowed   = ['jpg','jpeg','png','gif','webp'];
-        if (in_array($ext, $allowed) && $_FILES['profile_image']['size'] <= 2097152) {
+        if (!in_array($ext, $allowed)) {
+            $errors[] = "Invalid image format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP.";
+        } elseif ($_FILES['profile_image']['size'] > 2097152) {
+            $errors[] = "Profile image size must not exceed 2MB.";
+        } else {
             $new_name  = 'cust_' . $customer_id . '_' . time() . '.' . $ext;
             $dest      = 'uploads/' . $new_name;
             if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $dest)) {
@@ -42,49 +60,95 @@ if (isset($_POST['update_profile'])) {
         }
     }
 
-    mysqli_query($conn, "UPDATE customers SET full_name='$full_name', phone='$phone', gender='$gender', address='$address'$img_field WHERE customer_id='$customer_id'");
-    header("Location: customer-dashboard.php?tab=profile-settings&saved=1");
-    exit();
+    if (empty($errors)) {
+        mysqli_query($conn, "UPDATE customers SET full_name='$full_name', phone='$phone', gender='$gender', address='$address'$img_field WHERE customer_id='$customer_id'");
+        header("Location: customer-dashboard.php?tab=profile-settings&saved=1");
+        exit();
+    } else {
+        $err_msg = implode('\n', $errors);
+        echo "<script>alert('" . addslashes($err_msg) . "'); window.location.href='customer-dashboard.php?tab=profile-settings';</script>";
+        exit();
+    }
 }
 
 // ── Update Password ──
 if (isset($_POST['update_password'])) {
-    $curPass = mysqli_real_escape_string($conn, $_POST['cur_pass']);
-    $newPass = mysqli_real_escape_string($conn, $_POST['new_pass']);
-    if ($customer['password'] === $curPass) {
-        mysqli_query($conn, "UPDATE customers SET password='$newPass' WHERE customer_id='$customer_id'");
-        echo "<script>alert('Password updated successfully!');</script>";
-        // Re-fetch customer
-        $user_q  = mysqli_query($conn, "SELECT * FROM customers WHERE customer_id='$customer_id'");
-        $customer = mysqli_fetch_assoc($user_q);
+    $curPass  = mysqli_real_escape_string($conn, trim($_POST['cur_pass'] ?? ''));
+    $newPass  = mysqli_real_escape_string($conn, trim($_POST['new_pass'] ?? ''));
+    $confPass = mysqli_real_escape_string($conn, trim($_POST['conf_pass'] ?? ''));
+
+    $errors = [];
+    if (empty($curPass)) {
+        $errors[] = "Current password is required.";
+    }
+    if (empty($newPass) || strlen($newPass) < 6) {
+        $errors[] = "New password must be at least 6 characters long.";
+    }
+    if ($newPass !== $confPass) {
+        $errors[] = "New password and Confirm password do not match.";
+    }
+
+    if (empty($errors)) {
+        if ($customer['password'] === $curPass) {
+            mysqli_query($conn, "UPDATE customers SET password='$newPass' WHERE customer_id='$customer_id'");
+            echo "<script>alert('Password updated successfully!');</script>";
+            // Re-fetch customer
+            $user_q  = mysqli_query($conn, "SELECT * FROM customers WHERE customer_id='$customer_id'");
+            $customer = mysqli_fetch_assoc($user_q);
+        } else {
+            echo "<script>alert('Current password is incorrect.');</script>";
+        }
     } else {
-        echo "<script>alert('Current password is incorrect.');</script>";
+        $err_msg = implode('\n', $errors);
+        echo "<script>alert('" . addslashes($err_msg) . "');</script>";
     }
 }
 
 // ── Cancel Appointment ──
 if (isset($_POST['cancel_appointment'])) {
     $appt_id = (int)$_POST['appt_id'];
-    mysqli_query($conn, "UPDATE appointments SET status='cancelled' WHERE appointment_id='$appt_id' AND customer_id='$customer_id'");
+    if ($appt_id > 0) {
+        mysqli_query($conn, "UPDATE appointments SET status='cancelled' WHERE appointment_id='$appt_id' AND customer_id='$customer_id'");
+    }
     header("Location: customer-dashboard.php?tab=appointments");
     exit();
 }
 
 // ── Book Appointment ──
 if (isset($_POST['book_consultation'])) {
-    $lawyer_id = (int)$_POST['lawyer_id'];
-    $date      = mysqli_real_escape_string($conn, $_POST['appt_date']);
-    $time      = mysqli_real_escape_string($conn, $_POST['appt_time']);
-    $brief     = mysqli_real_escape_string($conn, $_POST['case_brief']);
+    $lawyer_id = (int)($_POST['lawyer_id'] ?? 0);
+    $date      = mysqli_real_escape_string($conn, trim($_POST['appt_date'] ?? ''));
+    $time      = mysqli_real_escape_string($conn, trim($_POST['appt_time'] ?? ''));
+    $brief     = mysqli_real_escape_string($conn, trim($_POST['case_brief'] ?? ''));
 
-    $svc_q     = mysqli_query($conn, "SELECT service_id FROM services LIMIT 1");
-    $service_id = 1;
-    if ($srow = mysqli_fetch_assoc($svc_q)) { $service_id = $srow['service_id']; }
+    $errors = [];
+    if ($lawyer_id <= 0) {
+        $errors[] = "Please select a valid lawyer.";
+    }
+    if (empty($date)) {
+        $errors[] = "Appointment date is required.";
+    }
+    if (empty($time)) {
+        $errors[] = "Appointment time is required.";
+    }
+    if (empty($brief) || strlen($brief) < 10) {
+        $errors[] = "Case brief must be at least 10 characters long.";
+    }
 
-    mysqli_query($conn, "INSERT INTO appointments (customer_id, lawyer_id, service_id, appointment_date, appointment_time, message, status)
-                         VALUES ('$customer_id', '$lawyer_id', '$service_id', '$date', '$time', '$brief', 'pending')");
-    header("Location: customer-dashboard.php?tab=appointments&booked=1");
-    exit();
+    if (empty($errors)) {
+        $svc_q     = mysqli_query($conn, "SELECT service_id FROM services LIMIT 1");
+        $service_id = 1;
+        if ($srow = mysqli_fetch_assoc($svc_q)) { $service_id = $srow['service_id']; }
+
+        mysqli_query($conn, "INSERT INTO appointments (customer_id, lawyer_id, service_id, appointment_date, appointment_time, message, status)
+                             VALUES ('$customer_id', '$lawyer_id', '$service_id', '$date', '$time', '$brief', 'pending')");
+        header("Location: customer-dashboard.php?tab=appointments&booked=1");
+        exit();
+    } else {
+        $err_msg = implode('\n', $errors);
+        echo "<script>alert('" . addslashes($err_msg) . "'); window.location.href='customer-dashboard.php?tab=search-lawyers';</script>";
+        exit();
+    }
 }
 
 // ── Dashboard Stats ──
@@ -236,8 +300,23 @@ $php_appointments_json = json_encode($php_appointments);
           </button>
           <ul class="dropdown-menu dropdown-menu-end dropdown-menu-dark bg-dark-card border border-gold border-1 shadow-lg" style="width: 280px; font-size:0.8rem; padding: 8px 0;">
             <li class="px-3 py-2 border-bottom border-secondary"><strong class="text-gold">Notifications</strong></li>
-            <li><a class="dropdown-menu-item dropdown-item py-2" href="#" onclick="switchTab('appointments'); return false;" style="white-space:normal; font-size:0.75rem; color:var(--white);">Consultation with Dr. Marcus Chen confirmed for July 8.</a></li>
-            <li><a class="dropdown-menu-item dropdown-item py-2" href="#" onclick="switchTab('appointments'); return false;" style="white-space:normal; font-size:0.75rem; color:var(--white);">Welcome to the new LexElite premium client workspace!</a></li>
+            <?php
+            $notif_q = mysqli_query($conn, "SELECT a.status, a.appointment_date, l.full_name as lawyer_name FROM appointments a JOIN lawyers l ON a.lawyer_id = l.lawyer_id WHERE a.customer_id = '$customer_id' ORDER BY a.appointment_id DESC LIMIT 4");
+            if (mysqli_num_rows($notif_q) > 0) {
+                while($notif = mysqli_fetch_assoc($notif_q)) {
+                    $status_msg = "";
+                    if($notif['status'] == 'confirmed') $status_msg = "Consultation with {$notif['lawyer_name']} confirmed for {$notif['appointment_date']}.";
+                    elseif($notif['status'] == 'pending') $status_msg = "Your request with {$notif['lawyer_name']} is pending approval.";
+                    elseif($notif['status'] == 'completed') $status_msg = "Consultation with {$notif['lawyer_name']} was completed.";
+                    elseif($notif['status'] == 'cancelled') $status_msg = "Consultation with {$notif['lawyer_name']} was cancelled.";
+                    else $status_msg = "Appointment update from {$notif['lawyer_name']}.";
+                    
+                    echo "<li><a class='dropdown-menu-item dropdown-item py-2' href='#' onclick=\"switchTab('appointments'); return false;\" style='white-space:normal; font-size:0.75rem; color:var(--white) !important;'><i class='fas fa-circle text-gold me-2' style='font-size:5px; vertical-align:middle;'></i>{$status_msg}</a></li>";
+                }
+            } else {
+                echo "<li><a class='dropdown-menu-item dropdown-item py-2' href='#' style='white-space:normal; font-size:0.75rem; color:rgba(255,255,255,0.7) !important;'>Welcome to the LexElite client workspace! You have no new alerts.</a></li>";
+            }
+            ?>
           </ul>
         </div>
 
@@ -404,20 +483,58 @@ $php_appointments_json = json_encode($php_appointments);
       <!-- ===================== PANEL: SEARCH LAWYERS ===================== -->
       <div class="panel-section" id="panel-search-lawyers">
         
+        <style>
+          .search-form-control::placeholder { color: rgba(255, 255, 255, 0.6) !important; opacity: 1; }
+          .search-form-control:-ms-input-placeholder { color: rgba(255, 255, 255, 0.6) !important; }
+          .search-form-control::-ms-input-placeholder { color: rgba(255, 255, 255, 0.6) !important; }
+          .lawyer-card-hover { transition: all 0.3s ease; }
+          .lawyer-card-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); border-color: var(--gold) !important; }
+          .bio-clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        </style>
+        
+        <?php
+        // Fetch dropdown options for search filters
+        $spec_query = mysqli_query($conn, "SELECT DISTINCT specialization FROM lawyers WHERE status = 'Approved' AND specialization != ''");
+        $specializations = [];
+        while($s = mysqli_fetch_assoc($spec_query)) { $specializations[] = $s['specialization']; }
+
+        $city_query = mysqli_query($conn, "SELECT DISTINCT city FROM lawyers WHERE status = 'Approved' AND city != ''");
+        $cities = [];
+        while($c = mysqli_fetch_assoc($city_query)) { $cities[] = $c['city']; }
+        ?>
+
         <!-- Interactive Quad-Search Bar -->
-        <div class="lawyer-search-bar">
+        <div class="lawyer-search-bar mb-4">
           <form method="GET" action="">
-            <div class="row g-3">
-              <div class="col-md-9">
-                <label class="form-label" style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:var(--gold); letter-spacing:0.05em;">Attorney Name, Specialization, or City</label>
-                <div class="input-group">
+            <input type="hidden" name="tab" value="search-lawyers">
+            <div class="row g-2 align-items-end">
+              <div class="col-md-4">
+                <label class="form-label text-gold small fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Lawyer Name</label>
+                <div class="input-group" style="height: 42px;">
                   <span class="input-group-text bg-transparent text-gold border-secondary"><i class="fas fa-search"></i></span>
-                  <input type="text" name="search" class="form-control bg-transparent text-white border-secondary" placeholder="Search e.g. Criminal, Karachi, Ali..." value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>">
+                  <input type="text" name="search_name" class="form-control search-form-control bg-transparent text-white border-secondary" placeholder="Search by name..." value="<?php echo isset($_GET['search_name']) ? htmlspecialchars($_GET['search_name']) : (isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''); ?>">
                 </div>
               </div>
               <div class="col-md-3">
-                <label class="form-label">&nbsp;</label>
-                <button type="submit" class="btn-gold w-100" style="padding:10px;"><i class="fas fa-search me-2"></i>Search Database</button>
+                <label class="form-label text-gold small fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">Practice Area</label>
+                <select name="search_spec" class="form-control search-form-control border-secondary text-white" style="background-color: var(--dark-card); height: 42px;">
+                  <option value="">All Areas</option>
+                  <?php foreach($specializations as $spec): ?>
+                    <option value="<?php echo htmlspecialchars($spec); ?>" <?php if(isset($_GET['search_spec']) && $_GET['search_spec'] == $spec) echo 'selected'; ?>><?php echo htmlspecialchars($spec); ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label text-gold small fw-bold text-uppercase" style="font-size:0.7rem; letter-spacing:0.05em;">City</label>
+                <select name="search_city" class="form-control search-form-control border-secondary text-white" style="background-color: var(--dark-card); height: 42px;">
+                  <option value="">All Cities</option>
+                  <?php foreach($cities as $city): ?>
+                    <option value="<?php echo htmlspecialchars($city); ?>" <?php if(isset($_GET['search_city']) && $_GET['search_city'] == $city) echo 'selected'; ?>><?php echo htmlspecialchars($city); ?></option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="col-md-2">
+                <button type="submit" class="btn-gold w-100 d-inline-flex justify-content-center align-items-center" style="height: 42px; padding: 0;"><i class="fas fa-search me-2"></i>Search</button>
               </div>
             </div>
           </form>
@@ -427,9 +544,23 @@ $php_appointments_json = json_encode($php_appointments);
         <div class="row g-4" id="lawyersGridRow">
           <?php
           $search_query = "";
-          if(isset($_GET['search']) && !empty(trim($_GET['search']))) {
-              $search = mysqli_real_escape_string($conn, $_GET['search']);
-              $search_query = " AND (full_name LIKE '%$search%' OR specialization LIKE '%$search%' OR city LIKE '%$search%')";
+          
+          if(isset($_GET['search_name']) && !empty(trim($_GET['search_name']))) {
+              $search_name = mysqli_real_escape_string($conn, trim($_GET['search_name']));
+              $search_query .= " AND full_name LIKE '%$search_name%'";
+          } elseif(isset($_GET['search']) && !empty(trim($_GET['search']))) {
+              $search_old = mysqli_real_escape_string($conn, trim($_GET['search']));
+              $search_query .= " AND full_name LIKE '%$search_old%'";
+          }
+          
+          if(isset($_GET['search_spec']) && !empty(trim($_GET['search_spec']))) {
+              $search_spec = mysqli_real_escape_string($conn, trim($_GET['search_spec']));
+              $search_query .= " AND specialization LIKE '%$search_spec%'";
+          }
+          
+          if(isset($_GET['search_city']) && !empty(trim($_GET['search_city']))) {
+              $search_city = mysqli_real_escape_string($conn, trim($_GET['search_city']));
+              $search_query .= " AND city LIKE '%$search_city%'";
           }
 
           $lawyer_q = mysqli_query($conn, "SELECT * FROM lawyers WHERE status='Approved' $search_query");
@@ -438,15 +569,14 @@ $php_appointments_json = json_encode($php_appointments);
               while($lawyer = mysqli_fetch_assoc($lawyer_q)) {
                   $img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : "https://ui-avatars.com/api/?name=".urlencode($lawyer['full_name']);
                   
-                  // Limit bio text to prevent breaking card layout
                   $bio = htmlspecialchars($lawyer['bio']);
-                  if(strlen($bio) > 80) $bio = substr($bio, 0, 80) . '...';
-
+                  $fee_formatted = number_format($lawyer['consultation_fee']);
+                  
                   echo "
-                  <div class='col-md-6 col-lg-4 lawyer-item'>
-                    <div class='dash-card text-center' style='padding:2rem 1.5rem; height:100%; display:flex; flex-direction:column;'>
-                      <div class='round-headshot-preview mx-auto' style='width:90px; height:90px; margin-bottom:1rem;'>
-                        <img src='{$img}' alt='Lawyer'>
+                  <div class='col-md-6 col-lg-4 lawyer-item d-flex'>
+                    <div class='dash-card text-center lawyer-card-hover border border-secondary w-100' style='padding:2rem 1.5rem; display:flex; flex-direction:column;'>
+                      <div class='mx-auto' style='width:120px; height:120px; margin-bottom:1rem; border:3px solid var(--gold); border-radius:50%; padding:3px; background:rgba(0,0,0,0.2);'>
+                        <img src='{$img}' alt='Lawyer' style='width:100%; height:100%; object-fit:cover; border-radius:50%;'>
                       </div>
                       <h4 style='font-family:var(--font-serif); font-size:1.2rem; margin-bottom:4px;'>{$lawyer['full_name']}</h4>
                       <p style='color:var(--gold); font-size:0.75rem; text-transform:uppercase; font-weight:700; margin-bottom:0.5rem;'>{$lawyer['specialization']}</p>
@@ -456,20 +586,20 @@ $php_appointments_json = json_encode($php_appointments);
                         <span><i class='fas fa-briefcase me-1 text-gold'></i> {$lawyer['experience']} Yrs</span>
                       </div>
                       
-                      <p style='font-size:0.8rem; color:rgba(255,255,255,0.7); line-height:1.4; margin-bottom:1rem; flex-grow:1;'>
-                        {$bio}
-                      </p>
+                      <div style='font-size:0.8rem; color:rgba(255,255,255,0.7); line-height:1.4; margin-bottom:1rem; flex-grow:1;' title='{$bio}'>
+                        <span class='bio-clamp'>{$bio}</span>
+                      </div>
                       
                       <div class='mt-auto pt-3 border-top border-secondary'>
                         <div class='mb-3 text-start d-flex justify-content-between align-items-center'>
                           <span style='font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;'>Retainer Fee</span>
-                          <strong style='color:var(--white);'>PKR {$lawyer['consultation_fee']}</strong>
+                          <strong style='color:var(--white);'>PKR {$fee_formatted}</strong>
                         </div>
-                        <div class='d-flex justify-content-between gap-2'>
-                          <a href='lawyer_profile.php?id={$lawyer['lawyer_id']}' class='btn-outline-gold w-50' style='padding:8px 0; font-size:0.75rem; text-align:center; text-decoration:none;'>
+                        <div class='d-flex gap-2 w-100'>
+                          <a href='lawyer_profile.php?id={$lawyer['lawyer_id']}' class='btn-outline-gold flex-fill text-decoration-none d-inline-flex justify-content-center align-items-center' style='padding:8px 0; font-size:0.75rem;'>
                             View Profile
                           </a>
-                          <a href='book_appointment.php?id={$lawyer['lawyer_id']}' class='btn-gold w-50' style='padding:8px 0; font-size:0.75rem; text-align:center; text-decoration:none;'>
+                          <a href='book_appointment.php?id={$lawyer['lawyer_id']}' class='btn-gold flex-fill text-decoration-none d-inline-flex justify-content-center align-items-center' style='padding:8px 0; font-size:0.75rem;'>
                             Book Slot
                           </a>
                         </div>
@@ -478,10 +608,9 @@ $php_appointments_json = json_encode($php_appointments);
                   </div>";
               }
           } else {
-              echo "<div class='col-12 text-center text-muted py-5'>
-                      <i class='fas fa-gavel fa-3x mb-3' style='color:var(--gold); opacity:0.5;'></i>
-                      <h5 class='text-white'>No Approved Lawyers Found</h5>
-                      <p>Try adjusting your search terms.</p>
+              echo "<div class='col-12 text-center py-5'>
+                      <i class='fas fa-search fa-3x mb-3' style='color:var(--gold); opacity:0.5;'></i>
+                      <h5 class='text-white' style='font-weight:600;'>No lawyers found. Please try another keyword.</h5>
                     </div>";
           }
           ?>
@@ -558,7 +687,7 @@ $php_appointments_json = json_encode($php_appointments);
                             <td>PKR {$r['fee']}</td>
                             <td><span class='badge {$badgeClass}'>{$r['status']}</span></td>
                             <td>
-                                <button class='btn btn-sm btn-outline-info' onclick='viewAppointmentDetails({$json_data})'>Details</button>
+                                <a href='customer-view-appointment.php?id=APT-{$r['appointment_id']}' class='btn btn-sm btn-outline-info'>Details</a>
                             </td>
                         </tr>";
                     }
@@ -569,98 +698,6 @@ $php_appointments_json = json_encode($php_appointments);
               </tbody>
             </table>
           </div>
-        </div>
-
-      </div>
-
-      <!-- ===================== PANEL: APPOINTMENT DETAILS ===================== -->
-      <div class="panel-section" id="panel-appointment-details">
-        
-        <div class="mb-3">
-          <button class="btn-outline-gold" style="padding:6px 16px; font-size:0.75rem;" onclick="switchTab('appointments')">
-            <i class="fas fa-arrow-left me-2"></i>Back to My Appointments
-          </button>
-        </div>
-
-        <div class="row g-4">
-          
-          <!-- Column 1: Attorney Profile Spotlight -->
-          <div class="col-lg-5">
-            <div class="dash-card text-center">
-              <div class="dash-card-title" style="justify-content:center;">Assigned Counsel</div>
-              <div class="round-headshot-preview" style="width:110px; height:110px;">
-                <img src="" alt="Lawyer photo" id="detLawyerImg">
-              </div>
-              <h4 style="font-family:var(--font-serif); font-size:1.3rem; margin-bottom:4px;" id="detLawyerName">Dr. Marcus Chen</h4>
-              <p style="color:var(--gold); font-size:0.78rem; text-transform:uppercase; font-weight:700; letter-spacing:0.08em;" id="detLawyerSpec">Corporate Law Specialist</p>
-              
-              <div class="text-start mt-4 pt-3 border-top border-secondary" style="font-size:0.82rem; line-height:1.8;">
-                <div class="mb-2"><i class="fas fa-map-marker-alt text-gold me-2" style="width:18px;"></i> <span id="detLawyerLoc">New York, NY</span></div>
-                <div class="mb-2"><i class="fas fa-envelope text-gold me-2" style="width:18px;"></i> <span id="detLawyerMail">chen@lexelite.com</span></div>
-                <div><i class="fas fa-shield-halved text-gold me-2" style="width:18px;"></i> Verified Legal Practitioner</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Column 2: Appointment Details -->
-          <div class="col-lg-7">
-            <div class="dash-card">
-              <div class="dash-card-title">
-                <span>Appointment Summary</span>
-                <span class="badge-status badge-Confirmed" id="detStatusBadge">Confirmed</span>
-              </div>
-
-              <div class="row g-3 mb-4" style="font-size:0.85rem;">
-                <div class="col-6 col-sm-3">
-                  <div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase;">Appt ID</div>
-                  <strong style="color:var(--white);" id="detApptId">APT-9041</strong>
-                </div>
-                <div class="col-6 col-sm-3">
-                  <div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase;">Date</div>
-                  <strong style="color:var(--white);" id="detDate">2026-07-08</strong>
-                </div>
-                <div class="col-6 col-sm-3">
-                  <div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase;">Time Slot</div>
-                  <strong style="color:var(--white);" id="detTime">10:00 AM</strong>
-                </div>
-                <div class="col-6 col-sm-3">
-                  <div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase;">Total Charge</div>
-                  <strong style="color:var(--gold);" id="detFee">$500.00</strong>
-                </div>
-              </div>
-
-              <div class="mb-4">
-                <div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; margin-bottom:4px;">Billing Payment Method</div>
-                <div style="font-size:0.85rem; color:var(--white);"><i class="fas fa-credit-card me-2"></i> <span id="detPayMethod">Visa ending in 9012</span></div>
-              </div>
-
-              <div class="mb-4">
-                <div style="color:var(--text-muted); font-size:0.7rem; text-transform:uppercase; margin-bottom:4px;">Case Description Brief</div>
-                <div style="font-size:0.85rem; color:rgba(255,255,255,0.85); background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:1rem; border-radius:8px;" id="detBrief">
-                  Consultation for Series-A investment documentation and IP licensing clauses.
-                </div>
-              </div>
-
-              <!-- Launch Lobby Block -->
-              <div class="mb-4" id="detailsVideoRoomBlock">
-                <!-- Rendered dynamically -->
-              </div>
-
-              <div class="d-flex gap-2 flex-wrap pt-3 border-top border-secondary">
-                <button class="btn-outline-gold" style="padding:10px 22px; font-size:0.8rem;" onclick="triggerReschedule()">
-                  <i class="fas fa-redo me-2"></i>Reschedule Slot
-                </button>
-                <form method="POST" action="" id="cancelApptForm" style="display:inline;">
-                  <input type="hidden" name="appt_id" id="cancelApptIdInput" value="">
-                  <button type="submit" name="cancel_appointment" class="btn-gold bg-danger text-white border-0" id="detailsCancelBtn" style="padding:10px 22px; font-size:0.8rem; box-shadow:none;" onclick="return confirm('Are you sure you want to cancel this appointment?');">
-                    <i class="fas fa-ban me-2"></i>Cancel Appointment
-                  </button>
-                </form>
-              </div>
-
-            </div>
-          </div>
-
         </div>
 
       </div>
@@ -699,12 +736,12 @@ $php_appointments_json = json_encode($php_appointments);
             <?php endif; ?>
             <div class="dash-card mb-4">
               <div class="dash-card-title">Client Account Details</div>
-              <form method="POST" action="" enctype="multipart/form-data">
+              <form method="POST" action="" enctype="multipart/form-data" id="updateProfileForm" onsubmit="return validateProfileForm()">
                 <div class="row g-3">
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profName">Full Name</label>
-                      <input type="text" name="full_name" class="luxury-input form-control" id="profName" value="<?php echo htmlspecialchars($customer['full_name']); ?>" required>
+                      <input type="text" name="full_name" class="luxury-input form-control" id="profName" value="<?php echo htmlspecialchars($customer['full_name']); ?>" required minlength="3" pattern="[A-Za-z\s.'-]+">
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -716,13 +753,13 @@ $php_appointments_json = json_encode($php_appointments);
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profPhone">Phone Number</label>
-                      <input type="tel" name="phone" class="luxury-input form-control" id="profPhone" value="<?php echo htmlspecialchars($customer['phone'] ?? ''); ?>">
+                      <input type="tel" name="phone" class="luxury-input form-control" id="profPhone" value="<?php echo htmlspecialchars($customer['phone'] ?? ''); ?>" required pattern="[0-9+\-\s]{10,15}">
                     </div>
                   </div>
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profGender">Gender</label>
-                      <select name="gender" class="luxury-input form-control" id="profGender" style="background-color:var(--dark-card);">
+                      <select name="gender" class="luxury-input form-control" id="profGender" required style="background-color:var(--dark-card);">
                         <option value="" <?php echo empty($customer['gender']) ? 'selected' : ''; ?>>Select Gender</option>
                         <option value="Male" <?php echo ($customer['gender'] ?? '') === 'Male' ? 'selected' : ''; ?>>Male</option>
                         <option value="Female" <?php echo ($customer['gender'] ?? '') === 'Female' ? 'selected' : ''; ?>>Female</option>
@@ -733,7 +770,7 @@ $php_appointments_json = json_encode($php_appointments);
                   <div class="col-md-12">
                     <div class="form-field-luxury">
                       <label for="profAddress">Address</label>
-                      <textarea name="address" class="luxury-input form-control" id="profAddress" rows="2" style="resize:none;"><?php echo htmlspecialchars($customer['address'] ?? ''); ?></textarea>
+                      <textarea name="address" class="luxury-input form-control" id="profAddress" rows="2" style="resize:none;" required minlength="5"><?php echo htmlspecialchars($customer['address'] ?? ''); ?></textarea>
                     </div>
                   </div>
                   <div class="col-md-12">
@@ -750,28 +787,28 @@ $php_appointments_json = json_encode($php_appointments);
             <!-- Change Password Card -->
             <div class="dash-card">
               <div class="dash-card-title">Security &amp; Encryption</div>
-              <form method="POST" action="">
+              <form method="POST" action="" id="updatePasswordForm" onsubmit="return validatePasswordForm()">
                 <div class="row g-3">
                   <div class="col-md-4">
                     <div class="form-field-luxury">
                       <label for="curPass">Current Password</label>
-                      <input type="password" name="cur_pass" class="luxury-input form-control" id="curPass" placeholder="••••••••" required>
+                      <input type="password" name="cur_pass" class="luxury-input form-control" id="curPass" placeholder="••••••••" required minlength="6">
                     </div>
                   </div>
                   <div class="col-md-4">
                     <div class="form-field-luxury">
                       <label for="newPass">New Password</label>
-                      <input type="password" name="new_pass" class="luxury-input form-control" id="newPass" placeholder="••••••••" required>
+                      <input type="password" name="new_pass" class="luxury-input form-control" id="newPass" placeholder="••••••••" required minlength="6">
                     </div>
                   </div>
                   <div class="col-md-4">
                     <div class="form-field-luxury">
                       <label for="confPass">Confirm New Password</label>
-                      <input type="password" class="luxury-input form-control" id="confPass" placeholder="••••••••" required>
+                      <input type="password" name="conf_pass" class="luxury-input form-control" id="confPass" placeholder="••••••••" required minlength="6">
                     </div>
                   </div>
                 </div>
-                <button type="submit" name="update_password" class="btn-gold mt-3" style="padding:12px 30px;" onclick="if(document.getElementById('newPass').value != document.getElementById('confPass').value) { alert('Passwords do not match'); return false; }"><i class="fas fa-shield-alt me-2"></i>Update Password</button>
+                <button type="submit" name="update_password" class="btn-gold mt-3" style="padding:12px 30px;"><i class="fas fa-shield-alt me-2"></i>Update Password</button>
               </form>
             </div>
           </div>
@@ -787,8 +824,8 @@ $php_appointments_json = json_encode($php_appointments);
 <div class="modal fade modal-luxury" id="bookingModal" tabindex="-1" aria-labelledby="bookingModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content">
-      <form method="POST" action="">
-      <input type="hidden" name="lawyer_id" id="modalLawyerIdHidden">
+      <form method="POST" action="" id="bookingForm" onsubmit="return validateBookingForm()">
+      <input type="hidden" name="lawyer_id" id="modalLawyerIdHidden" required>
       <div class="modal-header">
         <h5 class="modal-title" id="bookingModalLabel"><i class="fas fa-calendar-check text-gold me-2"></i>Request Consultation Booking</h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -810,19 +847,19 @@ $php_appointments_json = json_encode($php_appointments);
         <!-- Date selector -->
         <div class="mb-4">
           <div class="slot-selection-title">1. Select Available Date</div>
-          <input type="date" name="appt_date" class="luxury-input form-control" required style="max-width: 250px;">
+          <input type="date" name="appt_date" id="modalApptDate" class="luxury-input form-control" required min="<?php echo date('Y-m-d'); ?>" style="max-width: 250px;">
         </div>
 
         <!-- Time selector -->
         <div class="mb-4">
           <div class="slot-selection-title">2. Select Hour Slot</div>
-          <input type="time" name="appt_time" class="luxury-input form-control" required style="max-width: 250px;">
+          <input type="time" name="appt_time" id="modalApptTime" class="luxury-input form-control" required style="max-width: 250px;">
         </div>
 
         <!-- Case details description -->
         <div class="mb-3">
           <div class="slot-selection-title">3. Enter Case Brief (Confidential)</div>
-          <textarea class="luxury-input form-control" name="case_brief" rows="3" placeholder="Briefly describe your legal concerns so the attorney can prepare..." style="font-size:0.85rem; resize:none;" required></textarea>
+          <textarea class="luxury-input form-control" name="case_brief" id="modalCaseBrief" rows="3" placeholder="Briefly describe your legal concerns so the attorney can prepare..." style="font-size:0.85rem; resize:none;" required minlength="10"></textarea>
         </div>
 
         <div class="text-muted" style="font-size:0.7rem;">
@@ -919,7 +956,7 @@ function loadDashboardOverview() {
           + '<td>' + a.date + ' · ' + a.time + '</td>'
           + '<td>PKR ' + a.fee + '</td>'
           + '<td><span class="badge ' + bc + '">' + st + '</span></td>'
-          + '<td><button class="btn btn-sm btn-outline-info" onclick=\'viewAppointmentDetails(' + JSON.stringify(a) + ')\'>View</button></td>'
+          + '<td><a href="customer-view-appointment.php?id=' + a.id + '" class="btn btn-sm btn-outline-info">View</a></td>'
           + '</tr>';
   });
   if (!html) html = '<tr><td colspan="7" class="text-center text-muted py-4">No recent appointments found.</td></tr>';
@@ -933,6 +970,92 @@ function cancelCurrentAppointment() {
     $('#cancelApptIdInput').val(apptIdRaw);
     $('#cancelApptForm').submit();
   }
+}
+
+// ══ CLIENT-SIDE FORM VALIDATIONS ══
+function validateProfileForm() {
+  var name = $('#profName').val().trim();
+  var phone = $('#profPhone').val().trim();
+  var gender = $('#profGender').val();
+  var address = $('#profAddress').val().trim();
+  var fileInput = document.getElementById('profImageUpload');
+
+  if (name.length < 3) {
+    alert('Full Name must be at least 3 characters long.');
+    return false;
+  }
+  var phoneRegex = /^[0-9+\-\s]{10,15}$/;
+  if (!phoneRegex.test(phone)) {
+    alert('Please enter a valid phone number (10-15 digits).');
+    return false;
+  }
+  if (!gender) {
+    alert('Please select a gender.');
+    return false;
+  }
+  if (address.length < 5) {
+    alert('Address must be at least 5 characters long.');
+    return false;
+  }
+  if (fileInput && fileInput.files.length > 0) {
+    var file = fileInput.files[0];
+    var allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+    var ext = file.name.split('.').pop().toLowerCase();
+    if (!allowedExts.includes(ext)) {
+      alert('Invalid image file type. Please select JPG, JPEG, PNG, GIF, or WEBP.');
+      return false;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Image file size must not exceed 2MB.');
+      return false;
+    }
+  }
+  return true;
+}
+
+function validatePasswordForm() {
+  var curPass = $('#curPass').val();
+  var newPass = $('#newPass').val();
+  var confPass = $('#confPass').val();
+
+  if (!curPass || curPass.length < 6) {
+    alert('Current password must be at least 6 characters long.');
+    return false;
+  }
+  if (!newPass || newPass.length < 6) {
+    alert('New password must be at least 6 characters long.');
+    return false;
+  }
+  if (newPass !== confPass) {
+    alert('New password and Confirm password do not match.');
+    return false;
+  }
+  return true;
+}
+
+function validateBookingForm() {
+  var lawyerId = $('#modalLawyerIdHidden').val();
+  var apptDate = $('#modalApptDate').val();
+  var apptTime = $('#modalApptTime').val();
+  var caseBrief = $('#modalCaseBrief').val().trim();
+
+  if (!lawyerId) {
+    alert('Please select a lawyer to book.');
+    return false;
+  }
+  if (!apptDate) {
+    alert('Please select a consultation date.');
+    return false;
+  }
+  if (!apptTime) {
+    alert('Please select a consultation time slot.');
+    return false;
+  }
+  if (!caseBrief || caseBrief.length < 10) {
+    alert('Case brief must be at least 10 characters long.');
+    return false;
+  }
+  return true;
 }
 
 // ══ STEP 4: Run immediately (before ready) to update visible DOM right away ══

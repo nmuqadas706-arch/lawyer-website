@@ -18,17 +18,24 @@ $max_exp_db = !empty($stats['max_exp']) ? (int)$stats['max_exp'] : 30;
 
 // 2. Build PHP Dynamic Search Query
 $search_query = "";
-if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
-    $search = mysqli_real_escape_string($conn, $_GET['search']);
-    $search_query .= " AND (full_name LIKE '%$search%' OR specialization LIKE '%$search%' OR city LIKE '%$search%')";
+$search_param = isset($_GET['search']) ? trim($_GET['search']) : '';
+$city_param   = isset($_GET['city']) && !empty($_GET['city']) ? trim($_GET['city']) : (isset($_GET['loc']) ? trim($_GET['loc']) : '');
+$spec_param   = isset($_GET['spec']) && !empty($_GET['spec']) ? trim($_GET['spec']) : (isset($_GET['area']) ? trim($_GET['area']) : '');
+
+if (!empty($search_param)) {
+    $search_esc = mysqli_real_escape_string($conn, $search_param);
+    // Search by Lawyer Name using LIKE for partial match
+    $search_query .= " AND full_name LIKE '%$search_esc%'";
 }
-if (isset($_GET['city']) && !empty(trim($_GET['city']))) {
-    $city_esc = mysqli_real_escape_string($conn, $_GET['city']);
-    $search_query .= " AND city = '$city_esc'";
+if (!empty($city_param)) {
+    $city_esc = mysqli_real_escape_string($conn, $city_param);
+    // Search by City using LIKE
+    $search_query .= " AND city LIKE '%$city_esc%'";
 }
-if (isset($_GET['spec']) && !empty(trim($_GET['spec']))) {
-    $spec = mysqli_real_escape_string($conn, $_GET['spec']);
-    $search_query .= " AND specialization = '$spec'";
+if (!empty($spec_param)) {
+    $spec_esc = mysqli_real_escape_string($conn, $spec_param);
+    // Search by Practice Area / Specialization using LIKE
+    $search_query .= " AND specialization LIKE '%$spec_esc%'";
 }
 
 // 3. Fetch Lawyers
@@ -80,10 +87,10 @@ while($row = mysqli_fetch_assoc($q_lawyers)) {
         </div>
 
         <!-- 4-Field Search Bar (PHP Driven Form) -->
-        <form class="quad-search" data-aos="fade-up" data-aos-delay="100" id="mainSearchBar" action="" method="GET">
+        <form class="quad-search" data-aos="fade-up" data-aos-delay="100" id="mainSearchBar" action="" method="GET" onsubmit="return validateSearchForm()">
           <div class="qs-field">
             <i class="fas fa-search"></i>
-            <input type="text" name="search" id="searchName" placeholder="Search by name or keyword…" autocomplete="off" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>"/>
+            <input type="text" name="search" id="searchName" placeholder="Search by name or keyword…" autocomplete="off" maxlength="100" value="<?php echo isset($_GET['search']) ? htmlspecialchars($_GET['search']) : ''; ?>"/>
           </div>
           <div class="qs-field">
             <i class="fas fa-map-marker-alt"></i>
@@ -372,7 +379,7 @@ function starsHtml(r) {
 function renderListCard(l) {
   return `
   <div class="lawyer-search-card mb-3 animate-on-scroll" style="border-radius:14px;">
-    <div class="lsc-photo" style="${l.image ? `background:url('${l.image}') center/cover;` : `background:linear-gradient(135deg,${l.color1},${l.color2});`}">
+    <div class="lsc-photo" style="${l.image ? `background:url('${l.image}') center top/cover;` : `background:linear-gradient(135deg,${l.color1},${l.color2});`}">
       ${l.image ? '' : '<i class="fas fa-user-tie"></i>'}
       <div class="verified-badge"><i class="fas fa-check"></i></div>
     </div>
@@ -416,38 +423,48 @@ function renderListCard(l) {
 }
 
 function renderGridCard(l) {
+  let imgUrl = l.image ? l.image : `https://ui-avatars.com/api/?name=${encodeURIComponent(l.name)}&background=1A2F60&color=C9A84C&size=200`;
+  let shortBio = l.bio ? (l.bio.length > 80 ? l.bio.substring(0,77)+'...' : l.bio) : 'Experienced legal professional dedicated to achieving the best outcomes.';
+  let reviews = Math.floor(Math.random() * (300 - 50 + 1) + 50); // Simulate reviews count if not present
+
   return `
-  <div class="col-md-6 col-lg-4 mb-3">
-    <div class="lawyer-grid-card">
-      <div class="lgc-photo" style="${l.image ? `background:url('${l.image}') center/cover;` : `background:linear-gradient(135deg,${l.color1},${l.color2});`}">
-        ${l.image ? '' : '<i class="fas fa-user-tie"></i>'}
-        <span class="lgc-badge-verified"><i class="fas fa-check me-1"></i>Verified</span>
-        <span class="lgc-rating-pill">${starsHtml(l.rating)} ${l.rating}</span>
-      </div>
-      <div class="lgc-body">
-        <div class="lgc-specialty">${l.spec} <span class="badge bg-success float-end" style="font-size:0.6rem;">${l.status}</span></div>
-        <div class="lgc-name">${l.name}</div>
-        <div class="lgc-qual"><i class="fas fa-graduation-cap me-1" style="color:var(--gold);font-size:.68rem;"></i>${l.qual}</div>
-        <div class="lgc-meta">
-          <span class="lgc-meta-item"><i class="fas fa-map-marker-alt"></i>${l.city}</span>
-          <span class="lgc-meta-item"><i class="fas fa-briefcase"></i>${l.exp} years experience</span>
-        </div>
-        <div class="mt-2 mb-2" style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
-          ${l.bio ? (l.bio.length > 70 ? l.bio.substring(0,70)+'...' : l.bio) : 'Experienced legal professional.'}
-        </div>
-        <hr class="lgc-divider"/>
-        <div class="lgc-fee-row">
-          <div>
-            <div class="lgc-fee-label">Consultation Fee</div>
-            <div class="lgc-fee">Rs ${l.fee}</div>
+  <div class="col-md-6 col-lg-4 mb-4">
+    <div class="flip-card-custom">
+      <img src="${imgUrl}" alt="${l.name}" />
+      
+      <!-- Overlay container -->
+      <div class="flip-card-overlay">
+        <h3 class="flip-card-name">${l.name}</h3>
+        <div class="flip-card-spec" style="color:var(--white); font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">${l.spec}</div>
+        
+        <!-- The "View Details" hint button (visible by default, hides on hover) -->
+        <div class="view-details-btn-static btn-outline-gold" style="padding:6px 15px; font-size:0.75rem; display:inline-block; margin-top:10px;">View Details</div>
+        
+        <!-- The hidden content that appears on hover -->
+        <div class="flip-card-content">
+          <p class="lawyer-card-bio" style="color:rgba(255,255,255,0.8); font-size:0.85rem; line-height:1.5; margin-bottom:15px;">${shortBio}</p>
+          
+          <div class="d-flex justify-content-center gap-3 mb-3" style="font-size:0.8rem; color:var(--gold);">
+            <span><i class="fas fa-map-marker-alt"></i> ${l.city}</span>
+            <span><i class="fas fa-briefcase"></i> ${l.exp} yrs exp</span>
           </div>
-          <div style="text-align:right;">
-            <a href="book_appointment.php?lawyer_id=${l.id}" class="btn-outline-gold" style="padding:4px 8px;font-size:.7rem;"><i class="fas fa-calendar-check me-1"></i> Book</a>
+          
+          <div class="mb-3">
+            <span style="color:#F59E0B; font-size:1.1rem;">★★★★★</span>
+            <span style="color:var(--white); font-weight:600; margin-left:5px;">${l.rating}</span>
+            <span style="color:var(--text-muted); font-size:0.8rem;">(${reviews} reviews)</span>
+          </div>
+          
+          <div class="mb-3 text-start d-flex justify-content-between align-items-center w-100" style="padding: 0 10px;">
+            <span style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Retainer Fee</span>
+            <strong style="color:var(--white);">PKR ${l.fee}</strong>
+          </div>
+
+          <div class="d-flex gap-2 w-100">
+            <a href="lawyer_profile.php?id=${l.id}" class="btn-outline-gold flex-fill d-inline-flex justify-content-center align-items-center" style="padding:10px 0; font-size:0.8rem;">Profile</a>
+            <a href="book_appointment.php?id=${l.id}" class="btn-gold flex-fill d-inline-flex justify-content-center align-items-center" style="padding:10px 0; font-size:0.8rem;">Book Slot</a>
           </div>
         </div>
-        <a href="lawyer_profile.php?id=${l.id}" class="btn-gold w-100 mt-2" style="justify-content:center;padding:11px;font-size:.78rem;">
-          <i class="fas fa-user me-2"></i>View Full Profile
-        </a>
       </div>
     </div>
   </div>`;
@@ -545,6 +562,19 @@ function applyFilters() {
 }
 
 function runSearch() { applyFilters(); }
+
+function validateSearchForm() {
+  const search = $('#searchName').val() ? $('#searchName').val().trim() : '';
+  const city   = $('#searchCity').val();
+  const spec   = $('#searchSpec').val();
+  const exp    = $('#searchExp').val();
+
+  if (!search && !city && !spec && !exp) {
+    alert('Please enter a keyword or select a filter to search.');
+    return false;
+  }
+  return true;
+}
 
 function quickFilter(spec) {
   $('#searchSpec').val(spec);

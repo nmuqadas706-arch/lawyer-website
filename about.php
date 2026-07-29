@@ -60,13 +60,13 @@ include_once 'includes/header.php';
 <section class="section-dark" id="story">
   <div class="container">
     <div class="row align-items-center gy-5">
+     
 
       <!-- Image Side -->
       <div class="col-lg-5" data-aos="fade-right">
         <div class="story-img-wrapper position-relative">
           <div class="story-img-placeholder">
-            <i class="fas fa-balance-scale"></i>
-            <p>LexElite Law Firm</p>
+               <img src="" alt="">
           </div>
           <div class="founded-badge">
             <span class="founded-year">2012</span>

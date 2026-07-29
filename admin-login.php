@@ -2,29 +2,36 @@
 session_start();
 include 'includes/connection.php';
 
-
-
 $error = "";
 
 if(isset($_POST['login'])){
 
-    $email = mysqli_real_escape_string($conn,$_POST['email']);
-    $password = mysqli_real_escape_string($conn,$_POST['password']);
+    $email = isset($_POST['email']) ? trim($_POST['email']) : '';
+    $password = isset($_POST['password']) ? $_POST['password'] : '';
 
-    $query = mysqli_query($conn,"SELECT * FROM admins WHERE email='$email' AND password='$password'");
+    if(empty($email) || empty($password)){
+        $error = "Please fill in all required fields.";
+    } elseif(!filter_var($email, FILTER_VALIDATE_EMAIL)){
+        $error = "Please enter a valid email address.";
+    } elseif(strlen($password) < 6){
+        $error = "Password must be at least 6 characters long.";
+    } else {
+        $email_safe = mysqli_real_escape_string($conn, $email);
+        $password_safe = mysqli_real_escape_string($conn, $password);
 
-    if(mysqli_num_rows($query)>0){
+        $query = mysqli_query($conn, "SELECT * FROM admins WHERE email='$email_safe' AND password='$password_safe'");
 
-        $row = mysqli_fetch_assoc($query);
+        if($query && mysqli_num_rows($query) > 0){
+            $row = mysqli_fetch_assoc($query);
 
-        $_SESSION['admin_id'] = $row['admin_id'];
-        $_SESSION['admin_name'] = $row['name'];
+            $_SESSION['admin_id'] = $row['admin_id'];
+            $_SESSION['admin_name'] = $row['name'];
 
-        header("Location: admin.php");
-        exit();
-
-    }else{
-        $error = "Invalid Email or Password!";
+            header("Location: admin.php");
+            exit();
+        } else {
+            $error = "Invalid Email or Password!";
+        }
     }
 }
 ?>
@@ -37,6 +44,8 @@ if(isset($_POST['login'])){
 <title>Admin Login</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<!-- Font Awesome 6 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"/>
 <style>
 body{
     background:linear-gradient(135deg,#050816,#0d1b3e,#122b5c);
@@ -185,14 +194,6 @@ body{
 
 <div class="login-box">
 
-<h2 style="color:#fff; font-weight:700; margin-bottom:8px; font-size:1.5rem; font-family:'Poppins',sans-serif; text-align:center; padding:20px 0; ">Admin Login</h2>
-
-<?php
-if($error!=""){
-    echo "<div class='alert alert-danger'>$error</div>";
-}
-?>
-
 <div class="container d-flex justify-content-center align-items-center min-vh-100">
 
     <div class="auth-card">
@@ -212,12 +213,12 @@ if($error!=""){
         </div>
 
         <?php
-        if($error!=""){
+        if(!empty($error)){
             echo "<div class='alert alert-danger'>$error</div>";
         }
         ?>
 
-        <form method="POST">
+        <form id="adminLoginForm" method="POST" onsubmit="return validateAdminLogin();">
 
             <div class="mb-4">
 
@@ -232,9 +233,12 @@ if($error!=""){
                     <input
                         type="email"
                         name="email"
+                        id="adminEmail"
                         class="form-control"
                         placeholder="Enter your email"
-                        required>
+                        required
+                        maxlength="100"
+                        autocomplete="email">
 
                 </div>
 
@@ -253,9 +257,13 @@ if($error!=""){
                     <input
                         type="password"
                         name="password"
+                        id="adminPassword"
                         class="form-control"
                         placeholder="Enter password"
-                        required>
+                        required
+                        minlength="6"
+                        maxlength="50"
+                        autocomplete="current-password">
 
                 </div>
 
@@ -265,23 +273,37 @@ if($error!=""){
 
                 <i class="fas fa-sign-in-alt me-2"></i>
 
-                admin Login
+                Admin Login
 
             </button>
-             
-    
-
-
-
-
-
-
-           
 
         </form>
 
     </div>
 
 </div>
+</div>
+
+<script>
+function validateAdminLogin() {
+    var email = document.getElementById('adminEmail').value.trim();
+    var password = document.getElementById('adminPassword').value;
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (email === "" || password === "") {
+        alert("Please fill in both Email and Password fields.");
+        return false;
+    }
+    if (!emailPattern.test(email)) {
+        alert("Please enter a valid email address.");
+        return false;
+    }
+    if (password.length < 6) {
+        alert("Password must be at least 6 characters long.");
+        return false;
+    }
+    return true;
+}
+</script>
 </body>
 </html>

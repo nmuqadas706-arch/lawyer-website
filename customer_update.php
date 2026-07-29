@@ -22,38 +22,68 @@ $row = mysqli_fetch_assoc($query);
 
 // Handle form submission
 if (isset($_POST['btn_update'])) {
-    $full_name = mysqli_real_escape_string($conn, $_POST['txt_name']);
-    $email = mysqli_real_escape_string($conn, $_POST['txt_email']);
-    $phone = mysqli_real_escape_string($conn, $_POST['txt_phone']);
-    $gender = mysqli_real_escape_string($conn, $_POST['txt_gender']);
-    $address = mysqli_real_escape_string($conn, $_POST['txt_address']);
-    $password = mysqli_real_escape_string($conn, $_POST['txt_password']);
+    $full_name = mysqli_real_escape_string($conn, trim($_POST['txt_name'] ?? ''));
+    $email     = mysqli_real_escape_string($conn, trim($_POST['txt_email'] ?? ''));
+    $phone     = mysqli_real_escape_string($conn, trim($_POST['txt_phone'] ?? ''));
+    $gender    = mysqli_real_escape_string($conn, trim($_POST['txt_gender'] ?? ''));
+    $address   = mysqli_real_escape_string($conn, trim($_POST['txt_address'] ?? ''));
+    $password  = mysqli_real_escape_string($conn, trim($_POST['txt_password'] ?? ''));
 
-    // Default query without image update
-    $update_sql = "UPDATE customers SET 
-                   full_name='$full_name', 
-                   email='$email', 
-                   phone='$phone', 
-                   gender='$gender', 
-                   address='$address',
-                   password='$password'";
-
-    // Handle image upload if a new file is provided
-    if(isset($_FILES['txt_profile_picture']) && $_FILES['txt_profile_picture']['name'] != ""){
-        $image_name = $_FILES['txt_profile_picture']['name'];
-        $tmp_name = $_FILES['txt_profile_picture']['tmp_name'];
-        $profile_image = time().'_'.$image_name;
-        
-        move_uploaded_file($tmp_name, "uploads/".$profile_image);
-        $update_sql .= ", profile_image='$profile_image'";
+    $errors = [];
+    if (empty($full_name) || strlen($full_name) < 3 || !preg_match('/^[A-Za-z\s.\'\-]+$/u', $full_name)) {
+        $errors[] = "Full Name must be at least 3 characters and contain letters only (no numbers).";
+    }
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Please enter a valid email address.";
+    }
+    if (empty($phone) || !preg_match('/^[0-9+\-\s]{10,15}$/', $phone)) {
+        $errors[] = "Please enter a valid phone number (10-15 digits).";
+    }
+    if (empty($gender)) {
+        $errors[] = "Please select a gender.";
+    }
+    if (empty($address) || strlen($address) < 5) {
+        $errors[] = "Address must be at least 5 characters long.";
+    }
+    if (empty($password) || strlen($password) < 6) {
+        $errors[] = "Password must be at least 6 characters long.";
     }
 
-    $update_sql .= " WHERE customer_id='$id'";
+    $img_sql = "";
+    if (isset($_FILES['txt_profile_picture']) && $_FILES['txt_profile_picture']['name'] != "") {
+        $ext = strtolower(pathinfo($_FILES['txt_profile_picture']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg','jpeg','png','gif','webp'];
+        if (!in_array($ext, $allowed)) {
+            $errors[] = "Invalid image format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP.";
+        } elseif ($_FILES['txt_profile_picture']['size'] > 2097152) {
+            $errors[] = "Profile image size must not exceed 2MB.";
+        } else {
+            $profile_image = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $_FILES['txt_profile_picture']['name']);
+            if (move_uploaded_file($_FILES['txt_profile_picture']['tmp_name'], "uploads/" . $profile_image)) {
+                $img_sql = ", profile_image='$profile_image'";
+            }
+        }
+    }
 
-    if (mysqli_query($conn, $update_sql)) {
-        echo "<script>alert('Client Details Updated Successfully!'); window.location.href='admin.php';</script>";
+    if (empty($errors)) {
+        $update_sql = "UPDATE customers SET 
+                       full_name='$full_name', 
+                       email='$email', 
+                       phone='$phone', 
+                       gender='$gender', 
+                       address='$address',
+                       password='$password'$img_sql
+                       WHERE customer_id='$id'";
+
+        if (mysqli_query($conn, $update_sql)) {
+            echo "<script>alert('Client Details Updated Successfully!'); window.location.href='admin.php';</script>";
+            exit();
+        } else {
+            echo "<script>alert('Error Updating: " . mysqli_error($conn) . "');</script>";
+        }
     } else {
-        echo "<script>alert('Error Updating: " . mysqli_error($conn) . "');</script>";
+        $err_msg = implode('\n', $errors);
+        echo "<script>alert('" . addslashes($err_msg) . "');</script>";
     }
 }
 ?>
@@ -226,7 +256,7 @@ if (isset($_POST['btn_update'])) {
         <!-- Card Body -->
         <div class="card-body-premium">
 
-          <form method="POST" enctype="multipart/form-data">
+          <form method="POST" enctype="multipart/form-data" id="customerUpdateForm" onsubmit="return validateCustomerUpdateForm()">
             <input type="hidden" name="customer_id" value="<?php echo $row['customer_id']; ?>">
 
             <!-- Profile Image Section -->
@@ -250,21 +280,21 @@ if (isset($_POST['btn_update'])) {
               <div class="col-md-6">
                 <div class="form-field-luxury">
                   <label><i class="fas fa-user-tie"></i> Full Name</label>
-                  <input type="text" name="txt_name" value="<?php echo $row['full_name']; ?>" class="luxury-input form-control" required>
+                  <input type="text" name="txt_name" value="<?php echo htmlspecialchars($row['full_name']); ?>" class="luxury-input form-control" required minlength="3" maxlength="100" pattern="[A-Za-z .'\-]+" title="Name mein sirf letters allowed hain, numbers nahi">
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="form-field-luxury">
                   <label><i class="fas fa-envelope"></i> Email Address</label>
-                  <input type="email" name="txt_email" value="<?php echo $row['email']; ?>" class="luxury-input form-control" required>
+                  <input type="email" name="txt_email" value="<?php echo htmlspecialchars($row['email']); ?>" class="luxury-input form-control" required>
                 </div>
               </div>
 
               <div class="col-md-6">
                 <div class="form-field-luxury">
                   <label><i class="fas fa-phone"></i> Phone Number</label>
-                  <input type="text" name="txt_phone" value="<?php echo $row['phone']; ?>" class="luxury-input form-control" required>
+                  <input type="tel" name="txt_phone" value="<?php echo htmlspecialchars($row['phone']); ?>" class="luxury-input form-control" required pattern="[0-9+\-\s]{10,15}">
                 </div>
               </div>
 
@@ -272,6 +302,7 @@ if (isset($_POST['btn_update'])) {
                 <div class="form-field-luxury">
                   <label><i class="fas fa-venus-mars"></i> Gender</label>
                   <select name="txt_gender" class="luxury-input form-control" required>
+                    <option value="">Select Gender</option>
                     <option value="Male" <?php if($row['gender'] == 'Male') echo 'selected'; ?>>Male</option>
                     <option value="Female" <?php if($row['gender'] == 'Female') echo 'selected'; ?>>Female</option>
                     <option value="Other" <?php if($row['gender'] == 'Other') echo 'selected'; ?>>Other</option>
@@ -282,14 +313,14 @@ if (isset($_POST['btn_update'])) {
               <div class="col-md-12">
                 <div class="form-field-luxury">
                   <label><i class="fas fa-map-marker-alt"></i> Address</label>
-                  <input type="text" name="txt_address" value="<?php echo $row['address']; ?>" class="luxury-input form-control" required>
+                  <input type="text" name="txt_address" value="<?php echo htmlspecialchars($row['address']); ?>" class="luxury-input form-control" required minlength="5">
                 </div>
               </div>
 
               <div class="col-md-12">
                 <div class="form-field-luxury">
                   <label><i class="fas fa-lock"></i> Account Password</label>
-                  <input type="text" name="txt_password" value="<?php echo $row['password']; ?>" class="luxury-input form-control" required>
+                  <input type="password" name="txt_password" value="<?php echo htmlspecialchars($row['password']); ?>" class="luxury-input form-control" required minlength="6">
                 </div>
               </div>
             </div>
@@ -315,6 +346,62 @@ if (isset($_POST['btn_update'])) {
         };
         reader.readAsDataURL(input.files[0]);
       }
+    }
+
+    function validateCustomerUpdateForm() {
+      var name = document.querySelector('input[name="txt_name"]').value.trim();
+      var email = document.querySelector('input[name="txt_email"]').value.trim();
+      var phone = document.querySelector('input[name="txt_phone"]').value.trim();
+      var gender = document.querySelector('select[name="txt_gender"]').value;
+      var address = document.querySelector('input[name="txt_address"]').value.trim();
+      var password = document.querySelector('input[name="txt_password"]').value.trim();
+      var photoInput = document.getElementById('photoInput');
+
+      var nameRegex = /^[A-Za-z .'\-]+$/;
+      if (name.length < 3) {
+        alert('Full Name must be at least 3 characters long.');
+        return false;
+      }
+      if (!nameRegex.test(name)) {
+        alert('Full Name mein sirf letters allowed hain — numbers (jaise 123) nahi chalenge!');
+        return false;
+      }
+      var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        alert('Please enter a valid email address.');
+        return false;
+      }
+      var phoneRegex = /^[0-9+\-\s]{10,15}$/;
+      if (!phoneRegex.test(phone)) {
+        alert('Please enter a valid phone number (10-15 digits).');
+        return false;
+      }
+      if (!gender) {
+        alert('Please select a gender.');
+        return false;
+      }
+      if (address.length < 5) {
+        alert('Address must be at least 5 characters long.');
+        return false;
+      }
+      if (password.length < 6) {
+        alert('Account Password must be at least 6 characters long.');
+        return false;
+      }
+      if (photoInput && photoInput.files.length > 0) {
+        var file = photoInput.files[0];
+        var allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+        var ext = file.name.split('.').pop().toLowerCase();
+        if (!allowedExts.includes(ext)) {
+          alert('Invalid image file type. Allowed formats: JPG, JPEG, PNG, GIF, WEBP.');
+          return false;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          alert('Profile picture size must not exceed 2MB.');
+          return false;
+        }
+      }
+      return true;
     }
   </script>
 

@@ -4,20 +4,78 @@ include_once 'includes/header.php';
 
 if(!isset($_GET['id']) || empty($_GET['id'])) {
     echo "<div class='container mt-5 py-5 text-center text-white'><h3>Lawyer ID not provided.</h3><a href='search.php' class='btn-gold mt-3'>Back to Search</a></div>";
-    include_once 'includes/footer.php';
     exit;
 }
 
-$lawyer_id = mysqli_real_escape_string($conn, $_GET['id']);
+$lawyer_id = (int)$_GET['id'];
 $query = mysqli_query($conn, "SELECT * FROM lawyers WHERE lawyer_id='$lawyer_id' AND status='Approved'");
 if(mysqli_num_rows($query) == 0) {
     echo "<div class='container mt-5 py-5 text-center text-white'><h3>Lawyer not found or not approved.</h3><a href='search.php' class='btn-gold mt-3'>Back to Search</a></div>";
-    include_once 'includes/footer.php';
     exit;
 }
 
 $lawyer = mysqli_fetch_assoc($query);
-$img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : "https://ui-avatars.com/api/?name=".urlencode($lawyer['full_name']);
+$img = !empty($lawyer['profile_image']) ? "uploads/".htmlspecialchars($lawyer['profile_image']) : "https://ui-avatars.com/api/?name=".urlencode($lawyer['full_name'])."&background=1A2F60&color=C9A84C&size=200";
+
+// ── Appointment Stats ──
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM appointments WHERE lawyer_id='$lawyer_id'"));
+$prof_total_cases = (int)$r['t'];
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM appointments WHERE lawyer_id='$lawyer_id' AND LOWER(status)='completed'"));
+$prof_completed = (int)$r['t'];
+
+// ── Reviews ──
+$rev_q = mysqli_query($conn, "
+    SELECT r.*, c.full_name AS customer_name, c.profile_image AS cust_img
+    FROM reviews r
+    JOIN customers c ON r.customer_id = c.customer_id
+    WHERE r.lawyer_id='$lawyer_id'
+    ORDER BY r.created_at DESC
+");
+$prof_total_reviews = mysqli_num_rows($rev_q);
+$r2 = mysqli_fetch_assoc(mysqli_query($conn, "SELECT ROUND(AVG(rating),1) as avg_r, COUNT(*) as cnt FROM reviews WHERE lawyer_id='$lawyer_id'"));
+$prof_avg_rating = $r2['avg_r'] ? (float)$r2['avg_r'] : 0;
+
+// Rating breakdown (count per star 1-5)
+$rating_counts = [5=>0, 4=>0, 3=>0, 2=>0, 1=>0];
+$rc_q = mysqli_query($conn, "SELECT rating, COUNT(*) as cnt FROM reviews WHERE lawyer_id='$lawyer_id' GROUP BY rating");
+while($rc = mysqli_fetch_assoc($rc_q)) {
+    if(isset($rating_counts[(int)$rc['rating']])) {
+        $rating_counts[(int)$rc['rating']] = (int)$rc['cnt'];
+    }
+}
+
+// ── Schedule ──
+$sched_q = mysqli_query($conn, "SELECT * FROM schedules WHERE lawyer_id='$lawyer_id' AND status='Available' ORDER BY FIELD(day,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'), start_time");
+$schedule_by_day = [];
+while($sr = mysqli_fetch_assoc($sched_q)) {
+    $schedule_by_day[$sr['day']][] = $sr;
+}
+
+// ── Similar Lawyers ──
+$sim_q = mysqli_query($conn, "SELECT lawyer_id, full_name, specialization, profile_image, city, experience FROM lawyers WHERE specialization='" . mysqli_real_escape_string($conn, $lawyer['specialization']) . "' AND lawyer_id != '$lawyer_id' AND status='Approved' ORDER BY RAND() LIMIT 3");
+
+// ── Handle Review Submission ──
+$review_msg = '';
+if (isset($_POST['submit_review'])) {
+    if (session_status() === PHP_SESSION_NONE) { session_start(); }
+    if (isset($_SESSION['customer_id'])) {
+        $rev_cust_id = (int)$_SESSION['customer_id'];
+        $rev_rating  = isset($_POST['rev_rating']) ? (int)$_POST['rev_rating'] : 0;
+        $rev_text    = isset($_POST['rev_text']) ? mysqli_real_escape_string($conn, trim($_POST['rev_text'])) : '';
+
+        if ($rev_rating < 1 || $rev_rating > 5) {
+            $review_msg = 'Please select a valid star rating (1 to 5 stars).';
+        } elseif (empty($rev_text) || strlen(trim($_POST['rev_text'])) < 5) {
+            $review_msg = 'Review description must be at least 5 characters long.';
+        } else {
+            mysqli_query($conn, "INSERT INTO reviews (customer_id, lawyer_id, rating, review) VALUES ('$rev_cust_id','$lawyer_id','$rev_rating','$rev_text')");
+            header("Location: lawyer_profile.php?id=$lawyer_id&reviewed=1#reviews");
+            exit();
+        }
+    } else {
+        $review_msg = 'You must be logged in as a customer to submit a review.';
+    }
+}
 ?>
 <!-- ===================== PROFILE HERO ===================== -->
 <section class="profile-hero">
@@ -142,13 +200,13 @@ $img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : 
           <div class="row g-3 mb-4" data-aos="fade-up">
             <div class="col-6 col-md-3">
               <div style="text-align:center;padding:1.2rem;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;">
-                <div style="font-family:var(--font-serif);font-size:2rem;font-weight:800;color:var(--gold);line-height:1;" id="statWins">150+</div>
-                <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Cases Won</div>
+                <div style="font-family:var(--font-serif);font-size:2rem;font-weight:800;color:var(--gold);line-height:1;" id="statWins"><?php echo $prof_completed > 0 ? $prof_completed.'+' : '0'; ?></div>
+                <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Cases Done</div>
               </div>
             </div>
             <div class="col-6 col-md-3">
               <div style="text-align:center;padding:1.2rem;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;">
-                <div style="font-family:var(--font-serif);font-size:2rem;font-weight:800;color:var(--gold);line-height:1;" id="statCases">180+</div>
+                <div style="font-family:var(--font-serif);font-size:2rem;font-weight:800;color:var(--gold);line-height:1;" id="statCases"><?php echo $prof_total_cases > 0 ? $prof_total_cases.'+' : '0'; ?></div>
                 <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Total Cases</div>
               </div>
             </div>
@@ -160,7 +218,7 @@ $img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : 
             </div>
             <div class="col-6 col-md-3">
               <div style="text-align:center;padding:1.2rem;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.06);border-radius:12px;">
-                <div style="font-family:var(--font-serif);font-size:2rem;font-weight:800;color:var(--gold);line-height:1;" id="statRating">5.0</div>
+                <div style="font-family:var(--font-serif);font-size:2rem;font-weight:800;color:var(--gold);line-height:1;" id="statRating"><?php echo $prof_avg_rating > 0 ? $prof_avg_rating : 'N/A'; ?></div>
                 <div style="font-size:.68rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-top:4px;">Avg. Rating</div>
               </div>
             </div>
@@ -198,7 +256,26 @@ $img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : 
         <div class="tab-panel" id="panel-schedule">
           <div class="info-panel" data-aos="fade-up">
             <div class="info-panel-title"><i class="fas fa-calendar-week"></i> Weekly Availability</div>
-            <div class="schedule-grid mb-4" id="scheduleGrid"></div>
+            <div class="schedule-grid mb-4" id="scheduleGrid">
+              <?php
+              $days_order = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+              $has_schedule = false;
+              foreach($days_order as $d) {
+                  if (!empty($schedule_by_day[$d])) {
+                      $has_schedule = true;
+                      echo "<div class='schedule-day'>";
+                      echo "<div class='schedule-day-name'>" . htmlspecialchars($d) . "</div>";
+                      foreach($schedule_by_day[$d] as $slot) {
+                          echo "<div class='schedule-time'>" . date('h:i A', strtotime($slot['start_time'])) . "</div>";
+                      }
+                      echo "</div>";
+                  }
+              }
+              if (!$has_schedule) {
+                  echo "<div class='col-12' style='color:var(--text-muted);font-size:0.85rem;padding:1rem;'>No availability schedule set yet. Contact the lawyer directly to arrange an appointment.</div>";
+              }
+              ?>
+            </div>
             <div class="d-flex flex-wrap gap-3 mt-2">
               <span style="display:flex;align-items:center;gap:6px;font-size:.75rem;color:var(--text-muted);">
                 <span style="width:14px;height:14px;border-radius:4px;background:var(--gold-gradient);display:inline-block;"></span> Today
@@ -240,51 +317,90 @@ $img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : 
             <div class="info-panel-title"><i class="fas fa-chart-bar"></i> Rating Breakdown</div>
             <div class="d-flex align-items-center gap-4 flex-wrap mb-3">
               <div style="text-align:center;min-width:90px;">
-                <div style="font-family:var(--font-serif);font-size:4rem;font-weight:900;color:var(--gold);line-height:1;" id="bigRating">—</div>
-                <div class="hero-stars" id="bigStars" style="font-size:1.1rem;"></div>
-                <div style="font-size:.75rem;color:var(--text-muted);margin-top:3px;" id="bigReviews"></div>
+                <div style="font-family:var(--font-serif);font-size:4rem;font-weight:900;color:var(--gold);line-height:1;" id="bigRating"><?php echo $prof_avg_rating > 0 ? $prof_avg_rating : '—'; ?></div>
+                <div class="hero-stars" id="bigStars" style="font-size:1.1rem;"><?php echo str_repeat('★', round($prof_avg_rating)) . str_repeat('☆', 5-round($prof_avg_rating)); ?></div>
+                <div style="font-size:.75rem;color:var(--text-muted);margin-top:3px;" id="bigReviews"><?php echo $prof_total_reviews; ?> Review<?php echo $prof_total_reviews != 1 ? 's' : ''; ?></div>
               </div>
-              <div style="flex:1;" id="ratingBars"></div>
+              <div style="flex:1;" id="ratingBars">
+                <?php
+                foreach([5,4,3,2,1] as $star) {
+                    $cnt = $rating_counts[$star];
+                    $pct = $prof_total_reviews > 0 ? round(($cnt / $prof_total_reviews) * 100) : 0;
+                    echo "<div style='display:flex;align-items:center;gap:8px;margin-bottom:6px;'>";
+                    echo "<span style='font-size:.78rem;color:var(--gold);width:20px;'>{$star}★</span>";
+                    echo "<div style='flex:1;background:rgba(255,255,255,.06);border-radius:50px;height:6px;'>";
+                    echo "<div style='width:{$pct}%;background:var(--gold-gradient);height:100%;border-radius:50px;'></div>";
+                    echo "</div>";
+                    echo "<span style='font-size:.72rem;color:var(--text-muted);width:30px;'>{$pct}%</span>";
+                    echo "</div>";
+                }
+                ?>
+              </div>
             </div>
           </div>
 
           <!-- Review cards -->
-          <div id="reviewsList"></div>
+          <div id="reviewsList">
+            <?php
+            if ($prof_total_reviews > 0) {
+                mysqli_data_seek($rev_q, 0);
+                while ($rv = mysqli_fetch_assoc($rev_q)) {
+                    $rv_name    = htmlspecialchars($rv['customer_name']);
+                    $rv_rating  = (int)$rv['rating'];
+                    $rv_stars   = str_repeat('★', $rv_rating) . str_repeat('☆', 5-$rv_rating);
+                    $rv_text    = htmlspecialchars($rv['review']);
+                    $rv_date    = date('M d, Y', strtotime($rv['created_at']));
+                    $rv_init    = strtoupper(substr($rv['customer_name'], 0, 2));
+                    $rv_img_tag = !empty($rv['cust_img'])
+                        ? "<img src='uploads/".htmlspecialchars($rv['cust_img'])."' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'>"
+                        : $rv_init;
+                    echo "
+                    <div class='info-panel mb-3' data-aos='fade-up'>
+                        <div class='d-flex gap-3 align-items-start'>
+                            <div style='width:44px;height:44px;border-radius:50%;background:var(--gold-gradient);display:flex;align-items:center;justify-content:center;color:var(--dark);font-weight:800;font-size:.85rem;flex-shrink:0;overflow:hidden;'>$rv_img_tag</div>
+                            <div style='flex:1;'>
+                                <div style='font-weight:700;color:var(--white);margin-bottom:2px;'>$rv_name</div>
+                                <div style='font-size:.82rem;color:var(--gold);margin-bottom:6px;'>$rv_stars ($rv_rating/5)</div>
+                                <p style='font-size:.87rem;color:rgba(255,255,255,.8);margin:0;line-height:1.6;'>$rv_text</p>
+                                <div style='font-size:.72rem;color:var(--text-muted);margin-top:6px;'>$rv_date</div>
+                            </div>
+                        </div>
+                    </div>";
+                }
+            } else {
+                echo "<div class='info-panel text-center' style='color:var(--text-muted);padding:2rem;'><i class='fas fa-star fa-2x mb-3 d-block' style='opacity:.3;'></i>No reviews yet. Be the first to review this attorney.</div>";
+            }
+            ?>
+          </div>
 
           <!-- Write review -->
           <div class="info-panel" data-aos="fade-up">
             <div class="info-panel-title"><i class="fas fa-pen-to-square"></i> Write a Review</div>
-            <div style="margin-bottom:1rem;">
-              <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem;">Your Rating</div>
-              <div class="star-input" id="starInput">
-                <input type="radio" name="rev" id="r5" value="5"><label for="r5"><i class="fas fa-star"></i></label>
-                <input type="radio" name="rev" id="r4" value="4"><label for="r4"><i class="fas fa-star"></i></label>
-                <input type="radio" name="rev" id="r3" value="3"><label for="r3"><i class="fas fa-star"></i></label>
-                <input type="radio" name="rev" id="r2" value="2"><label for="r2"><i class="fas fa-star"></i></label>
-                <input type="radio" name="rev" id="r1" value="1"><label for="r1"><i class="fas fa-star"></i></label>
-              </div>
-            </div>
-            <div class="row g-3 mb-3">
-              <div class="col-md-6">
-                <div class="form-field-luxury">
-                  <label>Your Name</label>
-                  <input type="text" class="luxury-input form-control" id="revName" placeholder="John Smith">
+            <?php if (!empty($review_msg)): ?>
+              <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:12px;color:#ef4444;margin-bottom:1rem;font-size:.84rem;"><i class="fas fa-exclamation-circle me-2"></i><?php echo htmlspecialchars($review_msg); ?></div>
+            <?php endif; ?>
+            <?php if (isset($_GET['reviewed'])): ?>
+              <div style="background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.3);border-radius:8px;padding:12px;color:#4ade80;margin-bottom:1rem;font-size:.84rem;"><i class="fas fa-check-circle me-2"></i>Thank you! Your review has been submitted.</div>
+            <?php endif; ?>
+            <form method="POST" action="lawyer_profile.php?id=<?php echo $lawyer_id; ?>" onsubmit="return validateReviewForm()">
+              <div style="margin-bottom:1rem;">
+                <div style="font-size:.78rem;color:var(--text-muted);margin-bottom:.5rem;">Your Rating *</div>
+                <div class="star-input" id="starInput">
+                  <input type="radio" name="rev_rating" id="r5" value="5" required><label for="r5"><i class="fas fa-star"></i></label>
+                  <input type="radio" name="rev_rating" id="r4" value="4"><label for="r4"><i class="fas fa-star"></i></label>
+                  <input type="radio" name="rev_rating" id="r3" value="3"><label for="r3"><i class="fas fa-star"></i></label>
+                  <input type="radio" name="rev_rating" id="r2" value="2"><label for="r2"><i class="fas fa-star"></i></label>
+                  <input type="radio" name="rev_rating" id="r1" value="1"><label for="r1"><i class="fas fa-star"></i></label>
                 </div>
               </div>
-              <div class="col-md-6">
+              <div class="col-12 mb-3">
                 <div class="form-field-luxury">
-                  <label>Case Type</label>
-                  <input type="text" class="luxury-input form-control" id="revCase" placeholder="e.g. Criminal Defense">
+                  <label>Your Review *</label>
+                  <textarea class="luxury-input form-control" rows="4" name="rev_text" id="rev_text" placeholder="Share your experience with this attorney…" required minlength="5" maxlength="1000" style="resize:vertical;"></textarea>
                 </div>
               </div>
-              <div class="col-12">
-                <div class="form-field-luxury">
-                  <label>Your Review</label>
-                  <textarea class="luxury-input form-control" rows="4" id="revText" placeholder="Share your experience with this attorney…" style="resize:vertical;"></textarea>
-                </div>
-              </div>
-            </div>
-            <button class="btn-gold" onclick="submitReview()"><i class="fas fa-paper-plane"></i> Submit Review</button>
+              <button type="submit" name="submit_review" class="btn-gold"><i class="fas fa-paper-plane"></i> Submit Review</button>
+            </form>
           </div>
         </div>
 
@@ -292,11 +408,34 @@ $img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : 
         <div class="tab-panel" id="panel-details">
           <div class="info-panel" data-aos="fade-up">
             <div class="info-panel-title"><i class="fas fa-id-card"></i> Professional Details</div>
-            <div id="detailsBox"></div>
+            <div id="detailsBox">
+              <?php
+              $details = [
+                  ['fas fa-envelope',    'Email',            $lawyer['email']],
+                  ['fas fa-phone',       'Phone',            $lawyer['phone']],
+                  ['fas fa-map-marker-alt','City',           $lawyer['city']],
+                  ['fas fa-certificate', 'License / Bar No.',isset($lawyer['license_no']) ? $lawyer['license_no'] : 'Not provided'],
+                  ['fas fa-id-card',     'CNIC',             isset($lawyer['cnic_no']) ? $lawyer['cnic_no'] : 'Not provided'],
+                  ['fas fa-briefcase',   'Experience',       htmlspecialchars($lawyer['experience']).' Years'],
+                  ['fas fa-graduation-cap','Qualification',  $lawyer['qualification']],
+                  ['fas fa-gavel',       'Specialization',   $lawyer['specialization']],
+              ];
+              foreach($details as $d) {
+                  list($icon,$label,$val) = $d;
+                  if(empty($val)) continue;
+                  echo "<div style='display:flex;gap:14px;align-items:flex-start;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.04);'>";
+                  echo "<div style='width:36px;height:36px;border-radius:8px;background:rgba(201,168,76,.08);border:1px solid rgba(201,168,76,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--gold);'><i class='$icon'></i></div>";
+                  echo "<div><div style='font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text-muted);margin-bottom:2px;'>$label</div><div style='color:var(--white);font-size:.92rem;font-weight:600;'>".htmlspecialchars($val)."</div></div>";
+                  echo "</div>";
+              }
+              ?>
+            </div>
           </div>
           <div class="info-panel" data-aos="fade-up">
-            <div class="info-panel-title"><i class="fas fa-certificate"></i> Certifications & Awards</div>
-            <div id="awardsBox"></div>
+            <div class="info-panel-title"><i class="fas fa-certificate"></i> Certifications &amp; Awards</div>
+            <div id="awardsBox">
+              <div style="color:var(--text-muted);font-size:.85rem;"><i class="fas fa-info-circle me-2"></i>Contact attorney directly for full credentials and certifications.</div>
+            </div>
           </div>
         </div>
 
@@ -362,9 +501,36 @@ $img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : 
           <!-- Similar Lawyers -->
           <div class="info-panel mt-3" data-aos="fade-up">
             <div class="info-panel-title" style="margin-bottom:1rem;"><i class="fas fa-users"></i> Similar Attorneys</div>
-            <div id="similarBox"></div>
-            <a href="search.php" class="btn-outline-gold w-100 mt-2" style="justify-content:center;font-size:.78rem;">
-              <i class="fas fa-search me-2"></i>View All Attorneys
+            <div id="similarBox">
+              <?php
+              if (mysqli_num_rows($sim_q) > 0) {
+                  while ($sim = mysqli_fetch_assoc($sim_q)) {
+                      $sim_name = htmlspecialchars($sim['full_name']);
+                      $sim_spec = htmlspecialchars($sim['specialization']);
+                      $sim_city = htmlspecialchars($sim['city']);
+                      $sim_exp  = (int)$sim['experience'];
+                      $sim_init = strtoupper(substr($sim['full_name'],0,2));
+                      $sim_img  = !empty($sim['profile_image'])
+                          ? "<img src='uploads/".htmlspecialchars($sim['profile_image'])."' style='width:100%;height:100%;object-fit:cover;border-radius:50%;'>"
+                          : $sim_init;
+                      echo "
+                      <div style='display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.04);'>
+                          <div style='width:40px;height:40px;border-radius:50%;background:var(--gold-gradient);display:flex;align-items:center;justify-content:center;color:var(--dark);font-weight:800;font-size:.8rem;flex-shrink:0;overflow:hidden;'>$sim_img</div>
+                          <div style='flex:1;min-width:0;'>
+                              <div style='font-size:.84rem;font-weight:700;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'>$sim_name</div>
+                              <div style='font-size:.72rem;color:var(--gold);'>$sim_spec</div>
+                              <div style='font-size:.7rem;color:var(--text-muted);'><i class='fas fa-map-marker-alt me-1'></i>$sim_city &bull; $sim_exp yrs</div>
+                          </div>
+                          <a href='lawyer_profile.php?id={$sim['lawyer_id']}' class='btn-outline-gold' style='padding:5px 10px;font-size:.68rem;white-space:nowrap;'><i class='fas fa-eye'></i></a>
+                      </div>";
+                  }
+              } else {
+                  echo "<div style='color:var(--text-muted);font-size:.84rem;text-align:center;padding:1rem;'>No similar attorneys found.</div>";
+              }
+              ?>
+            </div>
+            <a href="search.php?spec=<?php echo urlencode($lawyer['specialization']); ?>" class="btn-outline-gold w-100 mt-2" style="justify-content:center;font-size:.78rem;">
+              <i class="fas fa-search me-2"></i>View All <?php echo htmlspecialchars($lawyer['specialization']); ?> Attorneys
             </a>
           </div>
 
@@ -403,31 +569,31 @@ $img = !empty($lawyer['profile_image']) ? "uploads/".$lawyer['profile_image'] : 
           <div class="col-md-6">
             <div class="form-field-luxury">
               <label>Full Name *</label>
-              <input type="text" class="luxury-input form-control" id="mName" placeholder="Your full name">
+              <input type="text" class="luxury-input form-control" id="mName" placeholder="Your full name" required minlength="2" maxlength="100">
             </div>
           </div>
           <div class="col-md-6">
             <div class="form-field-luxury">
               <label>Email Address *</label>
-              <input type="email" class="luxury-input form-control" id="mEmail" placeholder="your@email.com">
+              <input type="email" class="luxury-input form-control" id="mEmail" placeholder="your@email.com" required maxlength="150">
             </div>
           </div>
           <div class="col-md-6">
             <div class="form-field-luxury">
               <label>Phone Number</label>
-              <input type="tel" class="luxury-input form-control" id="mPhone" placeholder="+1 (555) 000-0000">
+              <input type="tel" class="luxury-input form-control" id="mPhone" placeholder="+1 (555) 000-0000" maxlength="20">
             </div>
           </div>
           <div class="col-md-6">
             <div class="form-field-luxury">
               <label>Case Type</label>
-              <input type="text" class="luxury-input form-control" id="mCaseType" placeholder="e.g. Criminal Defense">
+              <input type="text" class="luxury-input form-control" id="mCaseType" placeholder="e.g. Criminal Defense" maxlength="100">
             </div>
           </div>
           <div class="col-12">
             <div class="form-field-luxury">
-              <label>Brief Description of Your Legal Matter</label>
-              <textarea class="luxury-input form-control" rows="3" id="mDesc" placeholder="Describe your legal situation briefly…" style="resize:vertical;"></textarea>
+              <label>Brief Description of Your Legal Matter *</label>
+              <textarea class="luxury-input form-control" rows="3" id="mDesc" placeholder="Describe your legal situation briefly…" required minlength="10" maxlength="1000" style="resize:vertical;"></textarea>
             </div>
           </div>
         </div>
@@ -509,14 +675,62 @@ function showToast(msg) {
   setTimeout(()=>$('#toastBox').fadeOut(400), 3000);
 }
 
+function validateReviewForm() {
+  const ratingChecked = document.querySelector('input[name="rev_rating"]:checked');
+  const reviewText = document.getElementById('rev_text') ? document.getElementById('rev_text').value.trim() : '';
+
+  if (!ratingChecked) {
+    alert('Please select a star rating (1-5 stars) for your review.');
+    return false;
+  }
+  if (!reviewText || reviewText.length < 5) {
+    alert('Please write a review with at least 5 characters.');
+    if (document.getElementById('rev_text')) document.getElementById('rev_text').focus();
+    return false;
+  }
+  return true;
+}
+
+function openBookingModal() {
+  const modalEl = document.getElementById('bookingModal');
+  if (modalEl) {
+    const modal = new bootstrap.Modal(modalEl);
+    modal.show();
+  }
+}
+
+function confirmBooking() {
+  const name = $('#mName').val() ? $('#mName').val().trim() : '';
+  const email = $('#mEmail').val() ? $('#mEmail').val().trim() : '';
+  const desc = $('#mDesc').val() ? $('#mDesc').val().trim() : '';
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!name || name.length < 2) {
+    alert('Please enter your full name (at least 2 characters).');
+    $('#mName').focus();
+    return;
+  }
+  if (!email || !emailRegex.test(email)) {
+    alert('Please enter a valid email address.');
+    $('#mEmail').focus();
+    return;
+  }
+  if (!desc || desc.length < 10) {
+    alert('Please describe your legal matter (at least 10 characters).');
+    $('#mDesc').focus();
+    return;
+  }
+
+  const conf = 'LEX-' + Math.floor(100000 + Math.random() * 900000);
+  $('#confNum').text(conf);
+  $('#succName').text($('#pName').text() || 'Attorney Consultation');
+  $('#succDT').text(($('#sumDate').text() || 'Upcoming') + ' at ' + ($('#sumTime').text() || 'Scheduled Time'));
+  $('#modalBody, #modalFooter').hide();
+  $('#successBody').show();
+}
+
 function submitReview() {
-  const name = $('#revName').val().trim();
-  const text = $('#revText').val().trim();
-  const star = $('input[name=rev]:checked').val();
-  if (!name || !text) { showToast('Please fill in your name and review.'); return; }
-  showToast('Review submitted! Thank you for your feedback.');
-  $('#revName,#revText').val('');
-  $('input[name=rev]').prop('checked',false);
+  return validateReviewForm();
 }
 
 function shareLawyer() {

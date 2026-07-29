@@ -2,10 +2,206 @@
 session_start();
 include_once 'includes/connection.php';
 
-$lawyer_id = $_SESSION['lawyer_id'];
+// ── Session Guard ──
+if (!isset($_SESSION['lawyer_id'])) {
+    header("Location: lawyer-login.php");
+    exit();
+}
+$lawyer_id = (int)$_SESSION['lawyer_id'];
 
-$query = mysqli_query($conn, "SELECT * FROM lawyers WHERE lawyer_id='$lawyer_id'");
+// ── ALL ACTION HANDLERS (must be before any HTML output) ──
+
+// Accept appointment
+if (isset($_GET['accept'])) {
+    $aid = (int)$_GET['accept'];
+    mysqli_query($conn, "UPDATE appointments SET status='Confirmed' WHERE appointment_id='$aid' AND lawyer_id='$lawyer_id'");
+    header("Location: lawyerdashboard.php");
+    exit();
+}
+// Reject appointment
+if (isset($_GET['reject'])) {
+    $aid = (int)$_GET['reject'];
+    mysqli_query($conn, "UPDATE appointments SET status='Cancelled' WHERE appointment_id='$aid' AND lawyer_id='$lawyer_id'");
+    header("Location: lawyerdashboard.php");
+    exit();
+}
+// Complete appointment
+if (isset($_GET['complete'])) {
+    $aid = (int)$_GET['complete'];
+    mysqli_query($conn, "UPDATE appointments SET status='Completed' WHERE appointment_id='$aid' AND lawyer_id='$lawyer_id'");
+    header("Location: lawyerdashboard.php");
+    exit();
+}
+// Add schedule slot
+if (isset($_POST['add_schedule'])) {
+    $sday  = mysqli_real_escape_string($conn, trim($_POST['day'] ?? ''));
+    $stime = mysqli_real_escape_string($conn, trim($_POST['time'] ?? ''));
+
+    $valid_days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    $errors = [];
+    if (empty($sday) || !in_array($sday, $valid_days)) {
+        $errors[] = "Please select a valid day of the week.";
+    }
+    if (empty($stime)) {
+        $errors[] = "Please select a valid time slot.";
+    }
+
+    if (empty($errors)) {
+        mysqli_query($conn, "INSERT INTO schedules (lawyer_id, day, start_time, end_time, status) VALUES ('$lawyer_id', '$sday', '$stime', '$stime', 'Available')");
+        header("Location: lawyerdashboard.php?tab=schedule");
+        exit();
+    } else {
+        $err_msg = implode('\n', $errors);
+        echo "<script>alert('" . addslashes($err_msg) . "'); window.location.href='lawyerdashboard.php?tab=schedule';</script>";
+        exit();
+    }
+}
+// Delete schedule slot
+if (isset($_GET['delete_schedule'])) {
+    $sid = (int)$_GET['delete_schedule'];
+    if ($sid > 0) {
+        mysqli_query($conn, "DELETE FROM schedules WHERE schedule_id='$sid' AND lawyer_id='$lawyer_id'");
+    }
+    header("Location: lawyerdashboard.php?tab=schedule");
+    exit();
+}
+// Toggle schedule slot status
+if (isset($_GET['toggle_schedule'])) {
+    $sid = (int)$_GET['toggle_schedule'];
+    if ($sid > 0) {
+        mysqli_query($conn, "UPDATE schedules SET status = IF(status='Available','Unavailable','Available') WHERE schedule_id='$sid' AND lawyer_id='$lawyer_id'");
+    }
+    header("Location: lawyerdashboard.php?tab=schedule");
+    exit();
+}
+// Profile update (safe, with image upload support)
+if (isset($_POST['submit'])) {
+    $p_name    = mysqli_real_escape_string($conn, trim($_POST['profName'] ?? ''));
+    $p_spec    = mysqli_real_escape_string($conn, trim($_POST['profSpec'] ?? ''));
+    $p_qual    = mysqli_real_escape_string($conn, trim($_POST['profQual'] ?? ''));
+    $p_exp     = (int)($_POST['profExp'] ?? 0);
+    $p_cnic    = mysqli_real_escape_string($conn, trim($_POST['profCnic'] ?? ''));
+    $p_fee     = (float)($_POST['profFee'] ?? 0);
+    $p_city    = mysqli_real_escape_string($conn, trim($_POST['profCity'] ?? ''));
+    $p_addr    = mysqli_real_escape_string($conn, trim($_POST['profAddr'] ?? ''));
+    $p_email   = mysqli_real_escape_string($conn, trim($_POST['profEmail'] ?? ''));
+    $p_phone   = mysqli_real_escape_string($conn, trim($_POST['profPhone'] ?? ''));
+    $p_bio     = mysqli_real_escape_string($conn, trim($_POST['profBio'] ?? ''));
+
+    $errors = [];
+    if (empty($p_name) || strlen($p_name) < 3 || !preg_match('/^[A-Za-z\s.\'\-]+$/u', $p_name)) {
+        $errors[] = "Full Name must be at least 3 characters and contain letters only (no numbers).";
+    }
+    if (empty($p_spec)) {
+        $errors[] = "Please select a specialization.";
+    }
+    if (empty($p_qual)) {
+        $errors[] = "Qualification is required.";
+    }
+    if ($p_exp < 0 || $p_exp > 60) {
+        $errors[] = "Please enter valid years of experience (0-60).";
+    }
+    if (empty($p_cnic)) {
+        $errors[] = "CNIC Number is required.";
+    }
+    if ($p_fee < 0) {
+        $errors[] = "Consultation Fee cannot be negative.";
+    }
+    if (empty($p_city)) {
+        $errors[] = "City is required.";
+    }
+    if (empty($p_addr) || strlen($p_addr) < 5) {
+        $errors[] = "Office Address must be at least 5 characters long.";
+    }
+    if (empty($p_email) || !filter_var($p_email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Please enter a valid email address.";
+    }
+    if (empty($p_phone) || !preg_match('/^[0-9+\-\s]{10,15}$/', $p_phone)) {
+        $errors[] = "Please enter a valid phone number (10-15 digits).";
+    }
+    if (empty($p_bio) || strlen($p_bio) < 10) {
+        $errors[] = "Professional Biography must be at least 10 characters long.";
+    }
+
+    $img_sql = '';
+    if (!empty($_FILES['profile_image']['name'])) {
+        $ext     = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg','jpeg','png','gif','webp'];
+        if (!in_array($ext, $allowed)) {
+            $errors[] = "Invalid image format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP.";
+        } elseif ($_FILES['profile_image']['size'] > 2097152) {
+            $errors[] = "Profile image size must not exceed 2MB.";
+        } else {
+            $new_img = 'lawyer_' . $lawyer_id . '_' . time() . '.' . $ext;
+            if (move_uploaded_file($_FILES['profile_image']['tmp_name'], 'uploads/' . $new_img)) {
+                $img_sql = ", profile_image='$new_img'";
+            }
+        }
+    }
+
+    if (empty($errors)) {
+        $upd = "UPDATE lawyers SET
+            full_name='$p_name', specialization='$p_spec', qualification='$p_qual',
+            experience='$p_exp', cnic_no='$p_cnic', consultation_fee='$p_fee',
+            city='$p_city', address='$p_addr', email='$p_email',
+            phone='$p_phone', bio='$p_bio' $img_sql
+            WHERE lawyer_id='$lawyer_id'";
+        if (mysqli_query($conn, $upd)) {
+            header("Location: lawyerdashboard.php?tab=profile&saved=1");
+            exit();
+        }
+    } else {
+        $err_msg = implode('\n', $errors);
+        echo "<script>alert('" . addslashes($err_msg) . "'); window.location.href='lawyerdashboard.php?tab=profile';</script>";
+        exit();
+    }
+}
+
+// ── Fetch Lawyer Data ──
+$query  = mysqli_query($conn, "SELECT * FROM lawyers WHERE lawyer_id='$lawyer_id'");
 $lawyer = mysqli_fetch_assoc($query);
+if (!$lawyer) { session_destroy(); header("Location: lawyer-login.php"); exit(); }
+
+// ── Dashboard Stats from DB ──
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM appointments WHERE lawyer_id='$lawyer_id'"));
+$total_appts = (int)$r['t'];
+
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM appointments WHERE lawyer_id='$lawyer_id' AND LOWER(status)='pending'"));
+$pending_appts = (int)$r['t'];
+
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM appointments WHERE lawyer_id='$lawyer_id' AND LOWER(status)='confirmed'"));
+$confirmed_appts = (int)$r['t'];
+
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM appointments WHERE lawyer_id='$lawyer_id' AND LOWER(status)='completed'"));
+$completed_appts = (int)$r['t'];
+
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM appointments WHERE lawyer_id='$lawyer_id' AND LOWER(status)='cancelled'"));
+$cancelled_appts = (int)$r['t'];
+
+// Unique clients
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(DISTINCT customer_id) as t FROM appointments WHERE lawyer_id='$lawyer_id'"));
+$total_clients = (int)$r['t'];
+
+// Reviews & avg rating
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t, ROUND(AVG(rating),1) as avg_r FROM reviews WHERE lawyer_id='$lawyer_id'"));
+$total_reviews = (int)$r['t'];
+$avg_rating    = $r['avg_r'] ? (float)$r['avg_r'] : 0;
+
+// Total earnings from completed appointment fees
+$r = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COALESCE(SUM(s.fee),0) as earn FROM appointments a JOIN services s ON a.service_id=s.service_id WHERE a.lawyer_id='$lawyer_id' AND LOWER(a.status)='completed'"));
+$total_earnings = number_format((float)$r['earn'], 0);
+
+// Recent pending requests for dashboard widget (last 5)
+$recent_req_q = mysqli_query($conn, "
+    SELECT a.appointment_id, a.appointment_date, a.appointment_time, a.status,
+           c.full_name AS customer_name, s.service_name
+    FROM appointments a
+    JOIN customers c ON a.customer_id = c.customer_id
+    JOIN services  s ON a.service_id  = s.service_id
+    WHERE a.lawyer_id='$lawyer_id' AND LOWER(a.status)='pending'
+    ORDER BY a.appointment_date ASC
+    LIMIT 5
+");
 
 ?>
 <!DOCTYPE html>
@@ -297,7 +493,7 @@ $lawyer = mysqli_fetch_assoc($query);
   <!-- ===================== SIDEBAR ===================== -->
   <aside class="dash-sidebar" id="dashSidebar">
     <div class="sidebar-brand">
-      <a class="navbar-brand-logo text-decoration-none" href="index.html" style="display:inline-flex;">
+      <a class="navbar-brand-logo text-decoration-none" href="index.php" style="display:inline-flex;">
         <div class="brand-icon" style="width:36px; height:36px; font-size:1rem;"><i class="fas fa-balance-scale"></i></div>
         <div class="ms-2">
           <span class="brand-text-main" style="font-size:1.1rem;">LexElite</span>
@@ -367,7 +563,11 @@ $lawyer = mysqli_fetch_assoc($query);
       <div class="d-flex align-items-center gap-3">
         <span style="font-size:0.8rem; color:var(--text-muted);"><i class="fas fa-circle text-success me-1"></i> Practice Online</span>
         <div id="topAvatarWrap" style="width:36px; height:36px; border-radius:50%; background:var(--gold-gradient); display:flex; align-items:center; justify-content:center; color:var(--dark); font-weight:800; font-size:0.85rem; overflow:hidden;">
-          MK
+          <?php if (!empty($lawyer['profile_image'])): ?>
+            <img src="uploads/<?php echo htmlspecialchars($lawyer['profile_image']); ?>" style="width:100%;height:100%;object-fit:cover;">
+          <?php else: ?>
+            <?php echo strtoupper(substr($lawyer['full_name'], 0, 2)); ?>
+          <?php endif; ?>
         </div>
       </div>
     </header>
@@ -379,9 +579,9 @@ $lawyer = mysqli_fetch_assoc($query);
         
         <!-- Welcome Jumbotron -->
         <div style="background:linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%); border:1px solid rgba(201, 168, 76, 0.2); border-radius:12px; padding:2rem; margin-bottom:2rem;">
-          <h3 style="font-family:var(--font-serif); font-size:1.4rem; font-weight:700; color:var(--white); margin-bottom:0.4rem;" id="welcomeAttorneyName">Welcome, Attorney <?= $lawyer['full_name']; ?></h3>
+          <h3 style="font-family:var(--font-serif); font-size:1.4rem; font-weight:700; color:var(--white); margin-bottom:0.4rem;" id="welcomeAttorneyName">Welcome, Attorney <?php echo htmlspecialchars($lawyer['full_name']); ?></h3>
           <p style="font-size:0.85rem; color:rgba(255, 255, 255, 0.7); margin:0;">
-            You have <strong style="color:var(--gold)">2 pending requests</strong> awaiting review and <strong style="color:var(--gold)">3 upcoming consultations</strong> scheduled for this week.
+            You have <strong style="color:var(--gold)"><?php echo $pending_appts; ?> pending request<?php echo $pending_appts != 1 ? 's' : ''; ?></strong> awaiting review and <strong style="color:var(--gold)"><?php echo $confirmed_appts; ?> upcoming consultation<?php echo $confirmed_appts != 1 ? 's' : ''; ?></strong> scheduled.
           </p>
         </div>
 
@@ -389,21 +589,19 @@ $lawyer = mysqli_fetch_assoc($query);
         <div class="grid-stats">
           <div class="stat-box">
             <div class="stat-box-icon"><i class="fas fa-calendar-check"></i></div>
-            <div><div class="stat-box-val" id="statBookingsCount">234</div><div class="stat-box-label">Total Bookings</div></div>
+            <div><div class="stat-box-val" id="statBookingsCount"><?php echo $total_appts; ?></div><div class="stat-box-label">Total Bookings</div></div>
           </div>
           <div class="stat-box">
             <div class="stat-box-icon"><i class="fas fa-award"></i></div>
-            <div><div class="stat-box-val" id="statWinsCount">140</div><div class="stat-box-label">Cases Won</div></div>
+            <div><div class="stat-box-val" id="statWinsCount"><?php echo $completed_appts; ?></div><div class="stat-box-label">Completed</div></div>
           </div>
           <div class="stat-box">
             <div class="stat-box-icon"><i class="fas fa-star"></i></div>
-            <div><div class="stat-box-val">4.9</div><div class="stat-box-label">Avg. Rating</div></div>
+            <div><div class="stat-box-val"><?php echo $avg_rating > 0 ? $avg_rating : 'N/A'; ?></div><div class="stat-box-label">Avg. Rating</div></div>
           </div>
           <div class="stat-box">
             <div class="stat-box-icon"><i class="fas fa-wallet"></i></div>
-            <div><div class="stat-box-val" id="statRateDisplay">
-    $<?= $lawyer['consultation_fee']; ?>
-</div><div class="stat-box-label">Hourly Rate</div></div>
+            <div><div class="stat-box-val" id="statRateDisplay">PKR <?php echo htmlspecialchars($lawyer['consultation_fee']); ?></div><div class="stat-box-label">Consultation Fee</div></div>
           </div>
         </div>
 
@@ -423,7 +621,21 @@ $lawyer = mysqli_fetch_assoc($query);
                     </tr>
                   </thead>
                   <tbody id="dashboardRequestsTable">
-                    <!-- Filled by JS -->
+                    <?php
+                    if (mysqli_num_rows($recent_req_q) > 0) {
+                        while ($rr = mysqli_fetch_assoc($recent_req_q)) {
+                            $rr_status_class = 'badge-Pending';
+                            echo "<tr>";
+                            echo "<td><strong>" . htmlspecialchars($rr['customer_name']) . "</strong></td>";
+                            echo "<td>" . htmlspecialchars($rr['service_name']) . "</td>";
+                            echo "<td>" . htmlspecialchars($rr['appointment_date']) . "</td>";
+                            echo "<td><span class='badge-status badge-Pending'>Pending</span></td>";
+                            echo "</tr>";
+                        }
+                    } else {
+                        echo "<tr><td colspan='4' class='text-center' style='color:var(--text-muted);padding:1.5rem;'>No pending requests</td></tr>";
+                    }
+                    ?>
                   </tbody>
                 </table>
               </div>
@@ -461,7 +673,7 @@ $lawyer = mysqli_fetch_assoc($query);
                 <span style="font-size:0.8rem; color:var(--white); font-weight:600; display:block;">Change Photo</span>
                 <span style="font-size:0.65rem; color:var(--text-muted);">JPG/PNG up to 2MB</span>
               </div>
-              <input type="file" id="headshotFile" accept="image/*" style="display:none;" onchange="updateProfileHeadshot(this)">
+              <input type="file" id="headshotFile" name="profile_image" accept="image/*" style="display:none;" onchange="updateProfileHeadshot(this)">
             </div>
           </div>
 
@@ -469,7 +681,7 @@ $lawyer = mysqli_fetch_assoc($query);
           <div class="col-lg-8">
             <div class="dash-card">
               <div class="dash-card-title">Attorney Retainer Details</div>
-              <form id="profileForm" method="post" enctype="multipart/form-data">
+              <form id="profileForm" method="post" enctype="multipart/form-data" onsubmit="return validateLawyerProfileForm()">
                  <div class="round-headshot-preview">
             <img src="uploads/<?= $lawyer['profile_image']; ?>"
 id="profileHeadshotPreview">
@@ -481,7 +693,7 @@ id="profileHeadshotPreview">
                       <label for="profName">Full Name</label>
                       <input type="text" name="profName" class="luxury-input form-control"
 id="profName"
-value="<?= $lawyer['full_name']; ?>" required>
+value="<?= htmlspecialchars($lawyer['full_name']); ?>" required minlength="3" pattern="[A-Za-z .'\-]+" title="Name mein sirf letters aur spaces allowed hain, numbers nahi">
                     </div>
                   </div>
                   <!-- Specialization -->
@@ -515,14 +727,14 @@ value="<?= $lawyer['full_name']; ?>" required>
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profQual">Qualification</label>
-                      <input type="text" name="profQual" class="luxury-input form-control" id="profQual" required  value="<?= $lawyer['qualification']; ?>">
+                      <input type="text" name="profQual" class="luxury-input form-control" id="profQual" required minlength="2" value="<?= htmlspecialchars($lawyer['qualification']); ?>">
                     </div>
                   </div>
                   <!-- Experience -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profExp">Experience (Years)</label>
-                      <input type="number" name="profExp" class="luxury-input form-control" id="profExp" required value="<?= $lawyer['experience']; ?>">
+                      <input type="number" name="profExp" class="luxury-input form-control" id="profExp" required min="0" max="60" value="<?= $lawyer['experience']; ?>">
                     </div>
                   </div>
                   <div class="col-md-6">
@@ -533,7 +745,7 @@ value="<?= $lawyer['full_name']; ?>" required>
        name="profCnic"
        id="profCnic"
        class="luxury-input form-control"
-       value="<?= $lawyer['cnic_no']; ?>"
+       value="<?= htmlspecialchars($lawyer['cnic_no']); ?>"
        required>
                     </div>
                   </div>
@@ -541,36 +753,36 @@ value="<?= $lawyer['full_name']; ?>" required>
                   <!-- Consultation Fee -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
-                      <label for="profFee">Consultation Fee (USD/hr)</label>
-                      <input type="number" name="profFee" class="luxury-input form-control" id="profFee" required value="<?= $lawyer['consultation_fee']; ?>">
+                      <label for="profFee">Consultation Fee (PKR/hr)</label>
+                      <input type="number" name="profFee" class="luxury-input form-control" id="profFee" required min="0" value="<?= $lawyer['consultation_fee']; ?>">
                     </div>
                   </div>
                   <!-- City -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profCity">City</label>
-                      <input type="text" name="profCity" class="luxury-input form-control" id="profCity" required value="<?= $lawyer['city']; ?>">
+                      <input type="text" name="profCity" class="luxury-input form-control" id="profCity" required minlength="2" value="<?= htmlspecialchars($lawyer['city']); ?>">
                     </div>
                   </div>
                   <!-- Office Address -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profAddr">Office Address</label>
-                      <input type="text" name="profAddr" class="luxury-input form-control" id="profAddr" required value="<?= $lawyer['address']; ?>">
+                      <input type="text" name="profAddr" class="luxury-input form-control" id="profAddr" required minlength="5" value="<?= htmlspecialchars($lawyer['address']); ?>">
                     </div>
                   </div>
                   <!-- Email -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profEmail">Email Address</label>
-                      <input type="email" name="profEmail" class="luxury-input form-control" id="profEmail" required value="<?= $lawyer['email']; ?>">
+                      <input type="email" name="profEmail" class="luxury-input form-control" id="profEmail" required value="<?= htmlspecialchars($lawyer['email']); ?>">
                     </div>
                   </div>
                   <!-- Phone -->
                   <div class="col-md-6">
                     <div class="form-field-luxury">
                       <label for="profPhone">Phone Number</label>
-                      <input type="tel" name="profPhone" class="luxury-input form-control" id="profPhone" required value="<?= $lawyer['phone']; ?>">
+                      <input type="tel" name="profPhone" class="luxury-input form-control" id="profPhone" required pattern="[0-9+\-\s]{10,15}" value="<?= htmlspecialchars($lawyer['phone']); ?>">
                     </div>
                   </div>
                   <!-- Bio -->
@@ -581,7 +793,7 @@ value="<?= $lawyer['full_name']; ?>" required>
 class="luxury-input form-control"
 name="profBio"
 id="profBio"
-rows="4"><?= $lawyer['bio']; ?></textarea>
+rows="4" required minlength="10"><?= htmlspecialchars($lawyer['bio']); ?></textarea>
                     </div>
                   </div>
                 </div>
@@ -594,46 +806,12 @@ rows="4"><?= $lawyer['bio']; ?></textarea>
         </div>
       </div>
       <?php
-
-if(isset($_POST['submit']))
-{
-    $name = $_POST['profName'];
-    $spec = $_POST['profSpec'];
-    $qual = $_POST['profQual'];
-    $exp = $_POST['profExp'];
-    $cnic = $_POST['profCnic'];
-    $fee = $_POST['profFee'];
-    $city = $_POST['profCity'];
-    $address = $_POST['profAddr'];
-    $email = $_POST['profEmail'];
-    $phone = $_POST['profPhone'];
-    $bio = $_POST['profBio'];
-
-    $update = "UPDATE lawyers SET
-        full_name='$name',
-        specialization='$spec',
-        qualification='$qual',
-        experience='$exp',
-        cnic_no='$cnic',
-        consultation_fee='$fee',
-        city='$city',
-        address='$address',
-        email='$email',
-        phone='$phone',
-        bio='$bio'
-        WHERE lawyer_id='$lawyer_id'";
-
-    if(mysqli_query($conn, $update))
-    {
-        echo "<script>alert('Profile Updated Successfully');</script>";
-        echo "<script>window.location='lawyerdashboard.php';</script>";
-    }
-    else
-    {
-        echo "<script>alert('Update Failed');</script>";
-    }
-}
-?>
+      // Profile update is now handled at the top of the file before HTML output.
+      // Show save success notification
+      if (isset($_GET['saved']) && $_GET['saved'] == '1') {
+          echo "<div style='background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.3);border-radius:10px;padding:12px 18px;color:#4ade80;margin-bottom:1rem;font-size:0.85rem;'><i class='fas fa-check-circle me-2'></i>Profile updated successfully!</div>";
+      }
+      ?>
       
       
       
@@ -661,44 +839,46 @@ if(isset($_POST['submit']))
           <div class="dash-card-title">Manage Weekly Availability</div>
           <p style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.5rem;">Configure your hours of availability for client instant bookings.</p>
           
-          <div class="row g-3 mb-4">
+          <form action="lawyerdashboard.php" method="POST" class="row g-3 mb-4" id="addScheduleForm" onsubmit="return validateScheduleForm()">
             <div class="col-md-4">
               <div class="form-field-luxury">
                 <label>Day of Week</label>
-                <select class="luxury-input form-control" id="schedDay" style="background-color:var(--dark-card);">
-                  <option>Monday</option>
-                  <option>Tuesday</option>
-                  <option>Wednesday</option>
-                  <option>Thursday</option>
-                  <option>Friday</option>
-                  <option>Saturday</option>
-                  <option>Sunday</option>
+                <select class="luxury-input form-control" name="day" id="schedDay" required style="background-color:var(--dark-card);">
+                  <option value="">Select Day</option>
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                  <option value="Sunday">Sunday</option>
                 </select>
               </div>
             </div>
             <div class="col-md-4">
               <div class="form-field-luxury">
                 <label>Time Slot</label>
-                <select class="luxury-input form-control" id="schedTime" style="background-color:var(--dark-card);">
-                  <option>9:00 AM</option>
-                  <option>10:00 AM</option>
-                  <option>11:00 AM</option>
-                  <option>12:00 PM</option>
-                  <option>1:00 PM</option>
-                  <option>2:00 PM</option>
-                  <option>3:00 PM</option>
-                  <option>4:00 PM</option>
-                  <option>5:00 PM</option>
-                  <option>6:00 PM</option>
+                <select class="luxury-input form-control" name="time" id="schedTime" required style="background-color:var(--dark-card);">
+                  <option value="">Select Slot</option>
+                  <option value="09:00:00">9:00 AM</option>
+                  <option value="10:00:00">10:00 AM</option>
+                  <option value="11:00:00">11:00 AM</option>
+                  <option value="12:00:00">12:00 PM</option>
+                  <option value="13:00:00">1:00 PM</option>
+                  <option value="14:00:00">2:00 PM</option>
+                  <option value="15:00:00">3:00 PM</option>
+                  <option value="16:00:00">4:00 PM</option>
+                  <option value="17:00:00">5:00 PM</option>
+                  <option value="18:00:00">6:00 PM</option>
                 </select>
               </div>
             </div>
             <div class="col-md-4 d-flex align-items-end">
-              <button class="btn-gold w-100" style="padding:14px; justify-content:center;" onclick="addScheduleSlot()">
+              <button type="submit" name="add_schedule" class="btn-gold w-100" style="padding:14px; justify-content:center;">
                 <i class="fas fa-plus me-2"></i>Add Availability Slot
               </button>
             </div>
-          </div>
+          </form>
 
           <div class="row g-4">
             <!-- Monday to Sunday Schedule View -->
@@ -707,7 +887,33 @@ if(isset($_POST['submit']))
                 <h5 style="font-family:var(--font-serif); font-size:1.05rem; color:var(--white); margin-bottom:1.2rem;"><i class="fas fa-calendar-alt text-gold me-2"></i>Weekly Schedule Calendar</h5>
                 
                 <div class="row g-3" id="weeklyScheduleViewer">
-                  <!-- Filled by JS day column chips -->
+                  <?php
+                  $days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                  foreach($days as $d) {
+                      $sq = mysqli_query($conn, "SELECT * FROM schedules WHERE lawyer_id='$lawyer_id' AND day='$d' ORDER BY start_time");
+                      echo "<div class='col-md-4 col-lg-3'>";
+                      echo "<div style='background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px; padding:1.2rem;'>";
+                      echo "<h6 style='color:var(--gold); font-size:0.85rem; font-weight:700; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:6px;'>$d</h6>";
+                      echo "<div class='d-flex flex-column'>";
+                      if(mysqli_num_rows($sq) > 0) {
+                          while($srow = mysqli_fetch_assoc($sq)) {
+                              $time_fmt = date('h:i A', strtotime($srow['start_time']));
+                              $sid = $srow['schedule_id'];
+                              $status = $srow['status'];
+                              $color = ($status == 'Available') ? '#28a745' : '#dc3545';
+                              echo "<div class='editor-time-chip mb-2' style='border-left: 3px solid $color; font-size: 0.8rem; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 6px;'>";
+                              echo "$time_fmt <br><span style='font-size:0.65rem; color:$color;'>($status)</span>";
+                              echo "<div class='float-end' style='margin-top: -15px;'>";
+                              echo "<a href='?toggle_schedule=$sid' class='text-warning me-2' title='Toggle Status'><i class='fas fa-sync-alt'></i></a>";
+                              echo "<a href='?delete_schedule=$sid' class='text-danger' title='Remove'><i class='fas fa-times'></i></a>";
+                              echo "</div></div>";
+                          }
+                      } else {
+                          echo "<div style='font-size:0.75rem; color:var(--text-muted); font-style:italic;'>No slots added</div>";
+                      }
+                      echo "</div></div></div>";
+                  }
+                  ?>
                 </div>
               </div>
             </div>
@@ -1319,53 +1525,123 @@ else
     renderAll();
   }
 
+  // ══ CLIENT-SIDE FORM VALIDATION FUNCTIONS ══
+  function validateLawyerProfileForm() {
+    var name = $('#profName').val().trim();
+    var spec = $('#profSpec').val();
+    var qual = $('#profQual').val().trim();
+    var exp = $('#profExp').val();
+    var cnic = $('#profCnic').val().trim();
+    var fee = $('#profFee').val();
+    var city = $('#profCity').val().trim();
+    var addr = $('#profAddr').val().trim();
+    var email = $('#profEmail').val().trim();
+    var phone = $('#profPhone').val().trim();
+    var bio = $('#profBio').val().trim();
+    var fileInput = document.getElementById('headshotFile');
+
+    var nameRegex = /^[A-Za-z .'\-]+$/;
+    if (name.length < 3) {
+      alert('Full Name must be at least 3 characters long.');
+      return false;
+    }
+    if (!nameRegex.test(name)) {
+      alert('Full Name mein sirf letters allowed hain — numbers (123) nahi chalenge!');
+      return false;
+    }
+    if (!spec) {
+      alert('Please select a specialization.');
+      return false;
+    }
+    if (qual.length < 2) {
+      alert('Qualification must be at least 2 characters long.');
+      return false;
+    }
+    if (exp === '' || exp < 0 || exp > 60) {
+      alert('Years of Experience must be a number between 0 and 60.');
+      return false;
+    }
+    if (!cnic) {
+      alert('CNIC Number is required.');
+      return false;
+    }
+    if (fee === '' || fee < 0) {
+      alert('Consultation Fee cannot be negative.');
+      return false;
+    }
+    if (city.length < 2) {
+      alert('City must be at least 2 characters long.');
+      return false;
+    }
+    if (addr.length < 5) {
+      alert('Office Address must be at least 5 characters long.');
+      return false;
+    }
+    var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      alert('Please enter a valid email address.');
+      return false;
+    }
+    var phoneRegex = /^[0-9+\-\s]{10,15}$/;
+    if (!phoneRegex.test(phone)) {
+      alert('Please enter a valid phone number (10-15 digits).');
+      return false;
+    }
+    if (bio.length < 10) {
+      alert('Professional Biography must be at least 10 characters long.');
+      return false;
+    }
+    if (fileInput && fileInput.files.length > 0) {
+      var file = fileInput.files[0];
+      var allowedExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+      var ext = file.name.split('.').pop().toLowerCase();
+      if (!allowedExts.includes(ext)) {
+        alert('Invalid profile image format. Allowed formats: JPG, JPEG, PNG, GIF, WEBP.');
+        return false;
+      }
+      if (file.size > 2 * 1024 * 1024) {
+        alert('Profile image size must not exceed 2MB.');
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function validateScheduleForm() {
+    var day = $('#schedDay').val();
+    var time = $('#schedTime').val();
+
+    if (!day) {
+      alert('Please select a day of the week.');
+      return false;
+    }
+    if (!time) {
+      alert('Please select a time slot.');
+      return false;
+    }
+    return true;
+  }
+
   $(document).ready(function() {
-    renderAll();
+    // ── Update sidebar badge counts from live DB data ──
+    $('#requestsBadgeCount').text(<?php echo (int)$pending_appts; ?>);
+    $('#upcomingBadgeCount').text(<?php echo (int)$confirmed_appts; ?>);
+
+    // ── Handle URL tab param after redirect ──
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam  = urlParams.get('tab');
+    if (tabParam) {
+      const $btn = $(`.menu-item[onclick*="'${tabParam}'"]`);
+      if ($btn.length) $btn.trigger('click');
+    }
+    if (urlParams.get('saved') === '1') {
+      setTimeout(() => showToast('Profile saved successfully!'), 300);
+    }
   });
 </script>
 </body>
 </html>
 <?php
-
-if(isset($_GET['accept']))
-{
-    $id = $_GET['accept'];
-
-    mysqli_query($conn, "
-        UPDATE appointments
-        SET status='Confirmed'
-        WHERE appointment_id='$id'
-    ");
-
-    header("Location: lawyerdashboard.php");
-    exit();
-}
-
-if(isset($_GET['reject']))
-{
-    $id = $_GET['reject'];
-
-    mysqli_query($conn, "
-        UPDATE appointments
-        SET status='Cancelled'
-        WHERE appointment_id='$id'
-    ");
-
-    header("Location: lawyerdashboard.php");
-    exit();
-}
-if(isset($_GET['complete']))
-{
-    $id = $_GET['complete'];
-
-    mysqli_query($conn,"
-    UPDATE appointments
-    SET status='Completed'
-    WHERE appointment_id='$id'
-    ");
-
-    header("Location: lawyerdashboard.php");
-    exit();
-}
-
+// All action handlers are now at the top of the file before HTML output.
+// This block is intentionally left as a clean placeholder.
 ?>

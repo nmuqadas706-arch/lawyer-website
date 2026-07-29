@@ -95,3 +95,28 @@ INSERT INTO services(service_name,description,fee) VALUES
 ('Tax Law','Tax Consultancy',8000),
 ('Immigration Law','Visa & Immigration',9000),
 ('Divorce Law','Divorce Cases',5500);
+-- ============================================================
+-- LexElite — Migration Fix Script
+-- Run this ONLY if you already have a live "lexelite" database
+-- and don't want to re-import the full lexelite.sql (data loss).
+-- This safely ADDS the missing table/column used by the code
+-- but never existed in the original schema.
+-- ============================================================
+USE lexelite;
+
+-- 1. Add cnic_no column to lawyers (used by lawyer-register.php,
+--    lawyer_edit.php, lawyerdashboard.php, admin.php)
+ALTER TABLE lawyers ADD COLUMN IF NOT EXISTS cnic_no VARCHAR(50) AFTER license_no;
+
+-- 2. Create schedules table (used by book_appointment.php,
+--    lawyerdashboard.php, admin.php)
+CREATE TABLE IF NOT EXISTS schedules (
+ schedule_id INT AUTO_INCREMENT PRIMARY KEY,
+ lawyer_id INT NOT NULL,
+ day VARCHAR(20) NOT NULL,
+ start_time TIME NOT NULL,
+ end_time TIME,
+ status ENUM('Available','Unavailable') DEFAULT 'Available',
+ FOREIGN KEY (lawyer_id) REFERENCES lawyers(lawyer_id) ON DELETE CASCADE
+);
+

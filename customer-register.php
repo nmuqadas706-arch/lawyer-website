@@ -116,29 +116,29 @@
         <p style="font-size:0.85rem; color:var(--text-muted);">Consult with top verified attorneys</p>
       </div>
 
-      <form id="customerRegisterForm" method="POST" enctype="multipart/form-data" >
+      <form id="customerRegisterForm" method="POST" enctype="multipart/form-data" onsubmit="return validateCustomerRegister();">
         <!-- Full Name -->
         <div class="form-field-luxury">
           <label for="fullName">Full Name</label>
-          <input type="text" name="txt_name" class="luxury-input form-control" id="fullName" placeholder="Jane Smith" required autocomplete="name">
+          <input type="text" name="txt_name" class="luxury-input form-control" id="fullName" placeholder="Jane Smith" required minlength="3" maxlength="50" pattern="^[A-Za-z\s]+$" title="Name must contain only letters and spaces (3-50 characters)" autocomplete="name">
         </div>
 
         <!-- Email -->
         <div class="form-field-luxury">
           <label for="email">Email Address</label>
-          <input type="email" name="txt_email" class="luxury-input form-control" id="email" placeholder="jane@example.com" required autocomplete="email">
+          <input type="email" name="txt_email" class="luxury-input form-control" id="email" placeholder="jane@example.com" required maxlength="100" autocomplete="email">
         </div>
 
         <!-- Phone -->
         <div class="form-field-luxury">
           <label for="phone">Phone Number</label>
-          <input type="tel" name="txt_phone" class="luxury-input form-control" id="phone" placeholder="+1 (555) 000-0000" required autocomplete="tel">
+          <input type="tel" name="txt_phone" class="luxury-input form-control" id="phone" placeholder="+1 (555) 000-0000" required pattern="^\+?[0-9\s\-\(\)]{10,20}$" title="Please enter a valid phone number (10-20 digits)" autocomplete="tel">
         </div>
         
         <!-- Password -->
         <div class="form-field-luxury">
           <label for="password">Password</label>
-          <input type="password" name="txt_password" class="luxury-input form-control" id="password" placeholder="Choose a strong password" required autocomplete="new-password">
+          <input type="password" name="txt_password" class="luxury-input form-control" id="password" placeholder="Choose a strong password" required minlength="6" maxlength="50" autocomplete="new-password">
         </div>
 
         <!-- gender -->
@@ -154,17 +154,13 @@
         <!-- address -->
         <div class="form-field-luxury">
           <label for="address">Address</label>
-          <input type="text" name="txt_address" class="luxury-input form-control" id="address" placeholder="Enter your address" required autocomplete="street-address">
+          <input type="text" name="txt_address" class="luxury-input form-control" id="address" placeholder="Enter your address" required minlength="5" maxlength="250" autocomplete="street-address">
         </div>
         <!-- profile-image -->
         <div class="form-field-luxury">
           <label for="profileImage">Profile Image</label>
           <input type="file" name="txt_profile_image" class="luxury-input form-control" id="profileImage" accept="image/*">
- 
         </div>
-
-
-            
 
         <!-- Agreement Checkbox -->
         <div class="d-flex align-items-start gap-2 mb-4">
@@ -182,37 +178,64 @@
     <?php
 
     include_once 'includes/connection.php';
-  if((isset($_POST['register']))){
-    
-    $name = $_POST['txt_name'];
-    $email = $_POST['txt_email'];
-    $phone = $_POST['txt_phone'];
-    $password = $_POST['txt_password'];
-    $gender = $_POST['txt_gender'];
-    $address = $_POST['txt_address'];
-    $profile_image = $_FILES['txt_profile_image']['name'];
-    $profile_image_tmp = $_FILES['txt_profile_image']['tmp_name'];
+    if(isset($_POST['register'])){
+      $name = isset($_POST['txt_name']) ? trim($_POST['txt_name']) : '';
+      $email = isset($_POST['txt_email']) ? trim($_POST['txt_email']) : '';
+      $phone = isset($_POST['txt_phone']) ? trim($_POST['txt_phone']) : '';
+      $password = isset($_POST['txt_password']) ? $_POST['txt_password'] : '';
+      $gender = isset($_POST['txt_gender']) ? trim($_POST['txt_gender']) : '';
+      $address = isset($_POST['txt_address']) ? trim($_POST['txt_address']) : '';
+      $profile_image = isset($_FILES['txt_profile_image']['name']) ? $_FILES['txt_profile_image']['name'] : '';
+      $profile_image_tmp = isset($_FILES['txt_profile_image']['tmp_name']) ? $_FILES['txt_profile_image']['tmp_name'] : '';
 
+      $errors = array();
 
-    move_uploaded_file($profile_image_tmp, "uploads/$profile_image");
-       
+      if(empty($name) || empty($email) || empty($phone) || empty($password) || empty($gender) || empty($address)){
+        $errors[] = "All required fields must be filled.";
+      }
+      if(!empty($name) && !preg_match("/^[A-Za-z\s]{3,50}$/", $name)){
+        $errors[] = "Full Name must contain only letters and spaces (3-50 characters).";
+      }
+      if(!empty($email) && !filter_var($email, FILTER_VALIDATE_EMAIL)){
+        $errors[] = "Invalid email address format.";
+      }
+      if(!empty($phone) && !preg_match("/^\+?[0-9\s\-\(\)]{10,20}$/", $phone)){
+        $errors[] = "Invalid phone number format (10-20 digits).";
+      }
+      if(!empty($password) && strlen($password) < 6){
+        $errors[] = "Password must be at least 6 characters long.";
+      }
+      if(!empty($address) && strlen($address) < 5){
+        $errors[] = "Address must be at least 5 characters long.";
+      }
 
-    $query = "INSERT INTO `customers`( `full_name`, `email`, `phone`, `password`, `gender`, `address`, `profile_image`, `created_at`) VALUES ('$name','$email','$phone','$password','$gender','$address','$profile_image', NOW())";
+      if(empty($errors)){
+        $name_safe = mysqli_real_escape_string($conn, $name);
+        $email_safe = mysqli_real_escape_string($conn, $email);
+        $phone_safe = mysqli_real_escape_string($conn, $phone);
+        $password_safe = mysqli_real_escape_string($conn, $password);
+        $gender_safe = mysqli_real_escape_string($conn, $gender);
+        $address_safe = mysqli_real_escape_string($conn, $address);
+        $profile_image_safe = mysqli_real_escape_string($conn, $profile_image);
 
-    $result = mysqli_query($conn, $query);
- 
-    if($result){
-       echo "<script>showToast('Registration successful! Redirecting…'); setTimeout(() => { window.location.href = 'customer-login.php'; }, 1500);</script>";
-    } else {
-       echo "<script>showToast('Registration failed. Please try again.');</script>";
+        if(!empty($profile_image)){
+          move_uploaded_file($profile_image_tmp, "uploads/$profile_image");
+        }
 
+        $query = "INSERT INTO `customers`( `full_name`, `email`, `phone`, `password`, `gender`, `address`, `profile_image`, `created_at`) VALUES ('$name_safe','$email_safe','$phone_safe','$password_safe','$gender_safe','$address_safe','$profile_image_safe', NOW())";
 
-  }
-    
-    
-  }
-    
-    
+        $result = mysqli_query($conn, $query);
+
+        if($result){
+           echo "<script>showToast('Registration successful! Redirecting…'); setTimeout(() => { window.location.href = 'customer-login.php'; }, 1500);</script>";
+        } else {
+           echo "<script>showToast('Registration failed. Please try again.');</script>";
+        }
+      } else {
+        $err_msg = implode("\\n", $errors);
+        echo "<script>alert('$err_msg');</script>";
+      }
+    }
     ?>
 
       <!-- Switch Screen Link -->
@@ -241,18 +264,48 @@
     setTimeout(() => $('#toastBox').fadeOut(400), 2500);
   }
 
-  function handleRegister(e) {
-    e.preventDefault();
-    const pass = $('#password').val();
-    const conf = $('#confirmPassword').val();
-    if (pass !== conf) {
-      showToast('Passwords do not match.');
-      return;
+  function validateCustomerRegister() {
+    var name = document.getElementById('fullName').value.trim();
+    var email = document.getElementById('email').value.trim();
+    var phone = document.getElementById('phone').value.trim();
+    var password = document.getElementById('password').value;
+    var gender = document.getElementById('gender').value;
+    var address = document.getElementById('address').value.trim();
+    var agreeTerms = document.getElementById('agreeTerms').checked;
+
+    var namePattern = /^[A-Za-z\s]{3,50}$/;
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    var phonePattern = /^\+?[0-9\s\-\(\)]{10,20}$/;
+
+    if (name === "" || email === "" || phone === "" || password === "" || gender === "" || address === "") {
+      alert("Please fill in all required fields.");
+      return false;
     }
-    showToast('Registration successful! Redirecting…');
-    setTimeout(() => {
-      window.location.href = 'customer-dashboard.php';
-    }, 1500);
+    if (!agreeTerms) {
+      alert("You must agree to the Terms of Service & Privacy Policy.");
+      return false;
+    }
+    if (!namePattern.test(name)) {
+      alert("Full Name must contain only letters and spaces (3 to 50 characters).");
+      return false;
+    }
+    if (!emailPattern.test(email)) {
+      alert("Please enter a valid email address.");
+      return false;
+    }
+    if (!phonePattern.test(phone)) {
+      alert("Please enter a valid phone number (10 to 20 digits).");
+      return false;
+    }
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long.");
+      return false;
+    }
+    if (address.length < 5) {
+      alert("Address must be at least 5 characters long.");
+      return false;
+    }
+    return true;
   }
 </script>
 </body>

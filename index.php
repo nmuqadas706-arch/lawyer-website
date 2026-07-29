@@ -2,8 +2,47 @@
 include_once 'includes/connection.php';
 include_once 'includes/header.php';
 
+$contact_success = false;
+$contact_error = '';
 
+if (isset($_POST['submit_contact'])) {
+    $name    = isset($_POST['name']) ? mysqli_real_escape_string($conn, trim($_POST['name'])) : '';
+    $email   = isset($_POST['email']) ? mysqli_real_escape_string($conn, trim($_POST['email'])) : '';
+    $subject = isset($_POST['subject']) ? mysqli_real_escape_string($conn, trim($_POST['subject'])) : '';
+    $message = isset($_POST['message']) ? mysqli_real_escape_string($conn, trim($_POST['message'])) : '';
 
+    if (empty($name) || empty($email) || empty($subject) || empty($message)) {
+        $contact_error = "All fields are required.";
+    } elseif (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+        $contact_error = "Please enter a valid email address.";
+    } elseif (strlen(trim($_POST['name'])) < 2) {
+        $contact_error = "Full Name must be at least 2 characters.";
+    } elseif (strlen(trim($_POST['subject'])) < 3) {
+        $contact_error = "Subject must be at least 3 characters.";
+    } elseif (strlen(trim($_POST['message'])) < 5) {
+        $contact_error = "Message must be at least 5 characters.";
+    } else {
+        $q = "INSERT INTO contact_messages (name, email, subject, message) VALUES ('$name', '$email', '$subject', '$message')";
+        if (mysqli_query($conn, $q)) {
+            $contact_success = true;
+        } else {
+            $contact_error = "Error sending message. Please try again.";
+        }
+    }
+}
+
+// ── Top Rated Attorneys for Hero Card ──
+$hero_lawyers_q = mysqli_query($conn, "
+    SELECT lawyer_id, full_name, specialization, profile_image
+    FROM lawyers
+    WHERE status = 'Approved'
+    ORDER BY lawyer_id ASC
+    LIMIT 3
+");
+$hero_lawyers = [];
+while ($hl = mysqli_fetch_assoc($hero_lawyers_q)) {
+    $hero_lawyers[] = $hl;
+}
 ?>
 
 <!-- ===================== HERO SECTION ===================== -->
@@ -64,30 +103,38 @@ include_once 'includes/header.php';
             <p class="hero-card-subtitle">Available 24/7 · Verified Credentials</p>
 
             <div class="hero-lawyer-list">
-              <div class="hero-lawyer-item">
-                <div class="lawyer-avatar">MK</div>
-                <div>
-                  <div class="lawyer-info-name">Michael Kingston</div>
-                  <div class="lawyer-info-spec">Criminal Defense</div>
+              <?php
+              if (!empty($hero_lawyers)):
+                foreach ($hero_lawyers as $hl):
+                  $hl_name = htmlspecialchars($hl['full_name']);
+                  $hl_spec = htmlspecialchars($hl['specialization']);
+                  $hl_initials = strtoupper(substr($hl['full_name'], 0, 1) . (strpos($hl['full_name'], ' ') !== false ? substr($hl['full_name'], strpos($hl['full_name'], ' ') + 1, 1) : ''));
+                  if (!empty($hl['profile_image'])):
+              ?>
+                <div class="hero-lawyer-item">
+                  <div class="lawyer-avatar" style="padding:0; overflow:hidden;">
+                    <img src="uploads/<?php echo htmlspecialchars($hl['profile_image']); ?>" alt="<?php echo $hl_name; ?>" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">
+                  </div>
+                  <div>
+                    <div class="lawyer-info-name"><?php echo $hl_name; ?></div>
+                    <div class="lawyer-info-spec"><?php echo $hl_spec; ?></div>
+                  </div>
+                  <div class="lawyer-rating">★ 5.0</div>
                 </div>
-                <div class="lawyer-rating">★ 4.9</div>
-              </div>
-              <div class="hero-lawyer-item">
-                <div class="lawyer-avatar" style="background:linear-gradient(135deg,#1A2F60,#0D1B3E); color:var(--gold);">SR</div>
-                <div>
-                  <div class="lawyer-info-name">Sarah Reynolds</div>
-                  <div class="lawyer-info-spec">Family & Divorce Law</div>
+              <?php else: ?>
+                <div class="hero-lawyer-item">
+                  <div class="lawyer-avatar"><?php echo $hl_initials; ?></div>
+                  <div>
+                    <div class="lawyer-info-name"><?php echo $hl_name; ?></div>
+                    <div class="lawyer-info-spec"><?php echo $hl_spec; ?></div>
+                  </div>
+                  <div class="lawyer-rating">★ 5.0</div>
                 </div>
-                <div class="lawyer-rating">★ 4.8</div>
-              </div>
-              <div class="hero-lawyer-item">
-                <div class="lawyer-avatar" style="background:linear-gradient(135deg,#A8872E,#C9A84C); color:var(--dark);">JC</div>
-                <div>
-                  <div class="lawyer-info-name">James Crawford</div>
-                  <div class="lawyer-info-spec">Corporate Law</div>
-                </div>
-                <div class="lawyer-rating">★ 5.0</div>
-              </div>
+              <?php
+                  endif;
+                endforeach;
+              endif;
+              ?>
             </div>
           </div>
 
@@ -154,6 +201,75 @@ include_once 'includes/header.php';
 </section>
 
 <!-- ===================== FEATURED LAWYERS ===================== -->
+<style>
+.flip-card-custom {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    background-color: var(--dark-card);
+}
+.flip-card-custom img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    transition: transform 0.6s ease;
+}
+.flip-card-custom:hover img {
+    transform: scale(1.08);
+}
+.flip-card-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to top, rgba(13, 27, 42, 1) 0%, rgba(13, 27, 42, 0.9) 30%, rgba(13, 27, 42, 0.2) 100%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 20px;
+    transition: all 0.5s ease;
+    text-align: center;
+}
+.flip-card-content {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: all 0.4s ease;
+    max-height: 0;
+}
+.flip-card-custom:hover .flip-card-content {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+    max-height: 500px; /* enough space */
+    margin-top: 15px;
+}
+.flip-card-custom:hover .flip-card-overlay {
+    background: rgba(13, 27, 42, 0.95);
+    justify-content: center;
+}
+.flip-card-name {
+    font-family: var(--font-serif);
+    font-size: 1.5rem;
+    color: var(--gold);
+    margin-bottom: 5px;
+    transition: all 0.4s ease;
+}
+.view-details-btn-static {
+    opacity: 1;
+    visibility: visible;
+    transition: all 0.3s ease;
+}
+.flip-card-custom:hover .view-details-btn-static {
+    opacity: 0;
+    visibility: hidden;
+    height: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+</style>
 <section class="section-darker" id="lawyers">
   <div class="container">
     <div class="row justify-content-center mb-5" data-aos="fade-up">
@@ -182,7 +298,7 @@ include_once 'includes/header.php';
               
               if (!empty($row['profile_image'])) {
                   $img_url = "uploads/" . htmlspecialchars($row['profile_image']);
-                  $img_html = "<div class='lawyer-card-img-placeholder' style=\"background:url('$img_url') center/cover no-repeat;\"></div>";
+                  $img_html = "<div class='lawyer-card-img-placeholder' style=\"background:url('$img_url') center top/cover no-repeat;\"></div>";
               } else {
                   $img_url = "https://ui-avatars.com/api/?name=".urlencode($name)."&background=1A2F60&color=C9A84C&size=200";
                   $img_html = "<div class='lawyer-card-img-placeholder' style=\"background:url('$img_url') center/cover no-repeat;\"></div>";
@@ -192,27 +308,39 @@ include_once 'includes/header.php';
               $reviews = rand(50, 300);
 
               echo "<div class='col-lg-4 col-md-6' data-aos='fade-up' data-aos-delay='$delay'>";
-              echo "  <div class='lawyer-card'>";
-              echo      $img_html;
-              echo "    <div class='lawyer-card-body'>";
-              echo "      <div class='lawyer-card-specialty'>$spec</div>";
-              echo "      <h3 class='lawyer-card-name'>$name</h3>";
-              echo "      <p class='lawyer-card-bio'>$bio</p>";
-              echo "      <div class='lawyer-card-rating'>";
-              echo "        <span class='stars'>★★★★★</span>";
-              echo "        <span style='font-size:0.82rem; font-weight:600; color:var(--white);'>$rating</span>";
-              echo "        <span style='font-size:0.78rem; color:var(--text-muted);'>($reviews reviews)</span>";
-              echo "      </div>";
-              echo "      <div class='lawyer-card-meta'>";
-              echo "        <span class='meta-item'><i class='fas fa-map-marker-alt'></i> $city</span>";
-              echo "        <span class='meta-item'><i class='fas fa-briefcase'></i> $exp yrs exp</span>";
-              echo "      </div>";
-              echo "      <div class='mt-3 d-flex gap-2'>";
-              echo "        <a href='lawyer_profile.php?id=$l_id' class='btn-gold' style='padding:10px 20px; font-size:0.78rem; flex:1; justify-content:center;'>View Profile</a>";
-              echo "        <a href='book_appointment.php?id=$l_id' class='btn-outline-gold' style='padding:10px 16px; font-size:0.78rem;' title='Book Appointment'><i class='fas fa-calendar-check'></i></a>";
-              echo "      </div>";
-              echo "    </div>";
-              echo "  </div>";
+              echo "  <div class='flip-card-custom'>";
+              echo "    <img src='$img_url' alt='$name' />";
+              
+              // Overlay container
+              echo "    <div class='flip-card-overlay'>";
+              echo "      <h3 class='flip-card-name'>$name</h3>";
+              echo "      <div class='flip-card-spec' style='color:var(--white); font-size:0.85rem; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;'>$spec</div>";
+              
+              // The "View Details" hint button (visible by default, hides on hover)
+              echo "      <div class='view-details-btn-static btn-outline-gold' style='padding:6px 15px; font-size:0.75rem; display:inline-block; margin-top:10px;'>View Details</div>";
+              
+              // The hidden content that appears on hover
+              echo "      <div class='flip-card-content'>";
+              echo "        <p class='lawyer-card-bio' style='color:rgba(255,255,255,0.8); font-size:0.85rem; line-height:1.5; margin-bottom:15px;'>$bio</p>";
+              
+              echo "        <div class='d-flex justify-content-center gap-3 mb-3' style='font-size:0.8rem; color:var(--gold);'>";
+              echo "          <span><i class='fas fa-map-marker-alt'></i> $city</span>";
+              echo "          <span><i class='fas fa-briefcase'></i> $exp yrs exp</span>";
+              echo "        </div>";
+              
+              echo "        <div class='mb-4'>";
+              echo "          <span style='color:#F59E0B; font-size:1.1rem;'>★★★★★</span>";
+              echo "          <span style='color:var(--white); font-weight:600; margin-left:5px;'>$rating</span>";
+              echo "          <span style='color:var(--text-muted); font-size:0.8rem;'>($reviews)</span>";
+              echo "        </div>";
+              
+              echo "        <div class='d-flex gap-2 w-100'>";
+              echo "          <a href='lawyer_profile.php?id=$l_id' class='btn-outline-gold flex-fill d-inline-flex justify-content-center align-items-center' style='padding:10px 0; font-size:0.8rem;'>Profile</a>";
+              echo "          <a href='book_appointment.php?id=$l_id' class='btn-gold flex-fill d-inline-flex justify-content-center align-items-center' style='padding:10px 0; font-size:0.8rem;'>Book Slot</a>";
+              echo "        </div>";
+              echo "      </div>"; // end flip-card-content
+              echo "    </div>"; // end flip-card-overlay
+              echo "  </div>"; // end flip-card-custom
               echo "</div>";
               
               $delay += 100;
@@ -254,12 +382,27 @@ include_once 'includes/header.php';
           while ($row = mysqli_fetch_assoc($q_services)) {
               $name = htmlspecialchars($row['service_name']);
               $desc = htmlspecialchars($row['description']);
-              $icon = htmlspecialchars($row['icon']);
-              if (empty($icon)) { $icon = "fa-scale-balanced"; }
-              if (strpos($icon, 'fa-') === 0 && strpos($icon, 'fas ') === false) {
-                  $icon = 'fas ' . $icon;
+              $raw_icon = trim($row['icon'] ?? '');
+              if (empty($raw_icon)) {
+                  $s_lower = strtolower($name);
+                  if (strpos($s_lower, 'family') !== false || strpos($s_lower, 'divorce') !== false) $icon = 'fas fa-heart';
+                  elseif (strpos($s_lower, 'property') !== false || strpos($s_lower, 'real estate') !== false) $icon = 'fas fa-home';
+                  elseif (strpos($s_lower, 'corporate') !== false || strpos($s_lower, 'business') !== false) $icon = 'fas fa-building';
+                  elseif (strpos($s_lower, 'criminal') !== false) $icon = 'fas fa-gavel';
+                  elseif (strpos($s_lower, 'civil') !== false) $icon = 'fas fa-users';
+                  elseif (strpos($s_lower, 'tax') !== false || strpos($s_lower, 'finance') !== false) $icon = 'fas fa-file-invoice-dollar';
+                  elseif (strpos($s_lower, 'labor') !== false || strpos($s_lower, 'employment') !== false) $icon = 'fas fa-user-tie';
+                  elseif (strpos($s_lower, 'immigration') !== false) $icon = 'fas fa-passport';
+                  elseif (strpos($s_lower, 'intellectual') !== false || strpos($s_lower, 'copyright') !== false) $icon = 'fas fa-lightbulb';
+                  elseif (strpos($s_lower, 'injury') !== false || strpos($s_lower, 'accident') !== false) $icon = 'fas fa-ambulance';
+                  else $icon = 'fas fa-balance-scale';
+              } else {
+                  if (strpos($raw_icon, 'fas ') === false && strpos($raw_icon, 'fab ') === false && strpos($raw_icon, 'far ') === false) {
+                      if (strpos($raw_icon, 'fa-') !== 0) { $raw_icon = 'fa-' . $raw_icon; }
+                      $raw_icon = 'fas ' . $raw_icon;
+                  }
+                  $icon = htmlspecialchars($raw_icon);
               }
-              
               $desc_short = (strlen($desc) > 100) ? substr($desc, 0, 97) . '...' : $desc;
               $search_link = "search.php?spec=" . urlencode($name);
 
@@ -466,7 +609,53 @@ include_once 'includes/header.php';
     </div>
 
     <div class="row g-4">
+      <?php
+      $q_reviews = mysqli_query($conn, "
+          SELECT r.review, r.rating, r.created_at, 
+                 c.full_name AS customer_name, c.profile_image AS customer_image,
+                 l.full_name AS lawyer_name, l.specialization
+          FROM reviews r
+          JOIN customers c ON r.customer_id = c.customer_id
+          JOIN lawyers l ON r.lawyer_id = l.lawyer_id
+          ORDER BY r.created_at DESC
+          LIMIT 4
+      ");
 
+      if ($q_reviews && mysqli_num_rows($q_reviews) > 0) {
+          $delay = 0;
+          while ($rev = mysqli_fetch_assoc($q_reviews)) {
+              $stars = str_repeat('★', (int)$rev['rating']) . str_repeat('☆', 5 - (int)$rev['rating']);
+              $review_text = htmlspecialchars($rev['review']);
+              $cust_name = htmlspecialchars($rev['customer_name']);
+              $lawyer_spec = htmlspecialchars($rev['specialization']);
+              
+              $initials = strtoupper(substr($cust_name, 0, 2));
+              
+              echo "<div class='col-lg-6 col-md-6' data-aos='fade-up' data-aos-delay='$delay'>";
+              echo "  <div class='testimonial-card'>";
+              echo "    <div class='testimonial-stars mb-2'>$stars</div>";
+              echo "    <div class='testimonial-quote'>\"</div>";
+              echo "    <p class='testimonial-text'>$review_text</p>";
+              echo "    <div class='testimonial-author'>";
+              if (!empty($rev['customer_image'])) {
+                  $img = "uploads/" . htmlspecialchars($rev['customer_image']);
+                  echo "      <div class='author-avatar' style='background:url(\"$img\") center/cover;color:transparent;'></div>";
+              } else {
+                  echo "      <div class='author-avatar' style='background:linear-gradient(135deg,#1A2F60,#0D1B3E);color:var(--gold);'>$initials</div>";
+              }
+              echo "      <div>";
+              echo "        <div class='author-name'>$cust_name</div>";
+              echo "        <div class='author-role'>$lawyer_spec Client</div>";
+              echo "      </div>";
+              echo "    </div>";
+              echo "  </div>";
+              echo "</div>";
+              
+              $delay += 100;
+          }
+      } else {
+      ?>
+      <!-- Fallback static testimonials if no reviews exist -->
       <div class="col-lg-4 col-md-6" data-aos="fade-up" data-aos-delay="0">
         <div class="testimonial-card">
           <div class="testimonial-stars mb-2">★★★★★</div>
@@ -541,6 +730,7 @@ include_once 'includes/header.php';
           </div>
         </div>
       </div>
+      <?php } ?>
 
     </div>
   </div>
@@ -614,7 +804,7 @@ include_once 'includes/header.php';
 </section>
 
 <!-- ===================== CTA SECTION ===================== -->
-<section class="cta-section" id="contact">
+<section class="cta-section" >
   <div class="container">
     <div class="row justify-content-center" data-aos="zoom-in">
       <div class="col-lg-7">
@@ -633,6 +823,63 @@ include_once 'includes/header.php';
           <span><i class="fas fa-check-circle" style="color:var(--gold);"></i> No hidden fees</span>
           <span><i class="fas fa-check-circle" style="color:var(--gold);"></i> Free first consultation</span>
           <span><i class="fas fa-check-circle" style="color:var(--gold);"></i> Satisfaction guarantee</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== CONTACT US ===================== -->
+<section class="section-dark" id="contact">
+  <div class="container">
+    <div class="row justify-content-center mb-5" data-aos="fade-up">
+      <div class="col-lg-6 text-center">
+        <span class="section-badge">Get In Touch</span>
+        <h2 class="section-title">Contact <span class="text-gold">Us</span></h2>
+        <div class="gold-line center"></div>
+        <p class="section-subtitle mx-auto">Have any questions? We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+      </div>
+    </div>
+
+    <div class="row justify-content-center" data-aos="fade-up" data-aos-delay="100">
+      <div class="col-lg-8">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:2.5rem;">
+          
+          <?php if (isset($contact_success) && $contact_success): ?>
+            <div style="background:rgba(74,222,128,0.1); border:1px solid rgba(74,222,128,0.3); border-radius:10px; padding:15px; color:#4ade80; text-align:center; margin-bottom:20px;">
+              <i class="fas fa-check-circle me-2"></i> Your message has been sent successfully. We will get back to you soon!
+            </div>
+          <?php elseif (isset($contact_error) && !empty($contact_error)): ?>
+            <div style="background:rgba(220,53,69,0.1); border:1px solid rgba(220,53,69,0.3); border-radius:10px; padding:15px; color:#ff6b6b; text-align:center; margin-bottom:20px;">
+              <i class="fas fa-exclamation-triangle me-2"></i> <?php echo $contact_error; ?>
+            </div>
+          <?php endif; ?>
+
+          <form action="index.php#contact" method="POST" onsubmit="return validateContactForm()">
+            <div class="row g-4">
+              <div class="col-md-6">
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:8px;">Full Name *</label>
+                <input type="text" name="name" id="contact_name" class="form-control" required minlength="2" maxlength="100" placeholder="John Doe" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--white); padding:12px; border-radius:10px;">
+              </div>
+              <div class="col-md-6">
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:8px;">Email Address *</label>
+                <input type="email" name="email" id="contact_email" class="form-control" required maxlength="150" placeholder="john@example.com" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--white); padding:12px; border-radius:10px;">
+              </div>
+              <div class="col-12">
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:8px;">Subject *</label>
+                <input type="text" name="subject" id="contact_subject" class="form-control" required minlength="3" maxlength="200" placeholder="How can we help?" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--white); padding:12px; border-radius:10px;">
+              </div>
+              <div class="col-12">
+                <label style="font-size:0.75rem; text-transform:uppercase; color:var(--gold); font-weight:700; margin-bottom:8px;">Message *</label>
+                <textarea name="message" id="contact_message" class="form-control" rows="5" required minlength="5" maxlength="1000" placeholder="Write your message here..." style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--white); padding:12px; border-radius:10px;"></textarea>
+              </div>
+              <div class="col-12 text-center mt-4">
+                <button type="submit" name="submit_contact" class="btn-gold" style="padding:14px 40px; font-size:1rem; border:none; border-radius:10px; cursor:pointer;">
+                  <i class="fas fa-paper-plane me-2"></i> Send Message
+                </button>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -827,16 +1074,50 @@ include_once 'includes/header.php';
     $(el).toggleClass('active');
   }
 
-  // ----- SEARCH -----
+  // ----- SEARCH VALIDATION -----
   function performSearch() {
     const area = $('#practiceArea').val();
-    const location = $('#locationInput').val();
-    if (!area && !location) {
+    const location = $('#locationInput').val() ? $('#locationInput').val().trim() : '';
+    const name = $('#nameInput').val() ? $('#nameInput').val().trim() : '';
+
+    if (!area && !location && !name) {
+      alert('Please select a practice area or enter a location or lawyer name.');
       $('#practiceArea').css('border-color','var(--gold)');
       setTimeout(() => $('#practiceArea').css('border-color',''), 1500);
-      return;
+      return false;
     }
-    window.location.href = `search.php?area=${encodeURIComponent(area || '')}&loc=${encodeURIComponent(location || '')}`;
+    window.location.href = `search.php?area=${encodeURIComponent(area || '')}&loc=${encodeURIComponent(location || '')}&search=${encodeURIComponent(name || '')}`;
+  }
+
+  // ----- CONTACT FORM VALIDATION -----
+  function validateContactForm() {
+    const name = $('#contact_name').val() ? $('#contact_name').val().trim() : '';
+    const email = $('#contact_email').val() ? $('#contact_email').val().trim() : '';
+    const subject = $('#contact_subject').val() ? $('#contact_subject').val().trim() : '';
+    const message = $('#contact_message').val() ? $('#contact_message').val().trim() : '';
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!name || name.length < 2) {
+      alert('Please enter your full name (at least 2 characters).');
+      $('#contact_name').focus();
+      return false;
+    }
+    if (!email || !emailRegex.test(email)) {
+      alert('Please enter a valid email address.');
+      $('#contact_email').focus();
+      return false;
+    }
+    if (!subject || subject.length < 3) {
+      alert('Please enter a subject (at least 3 characters).');
+      $('#contact_subject').focus();
+      return false;
+    }
+    if (!message || message.length < 5) {
+      alert('Please enter your message (at least 5 characters).');
+      $('#contact_message').focus();
+      return false;
+    }
+    return true;
   }
 
   $('#searchBtn').on('keypress', function(e) {

@@ -283,7 +283,7 @@ function renderLawyersTable() {
     if (status === 'pending') {
       actionButtons += `<button class="action-btn text-success me-1" onclick="approveLawyer(${l.id})" title="Approve Lawyer"><i class="fas fa-check"></i></button>`;
     }
-    if (status === 'active') {
+    if (status === 'approved') {
       actionButtons += `<button class="action-btn text-warning me-1" onclick="suspendLawyer(${l.id})" title="Suspend Lawyer"><i class="fas fa-ban"></i></button>`;
     }
     if (status === 'suspended') {

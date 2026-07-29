@@ -37,13 +37,17 @@ $success = false;
 $error   = '';
 
 if (isset($_POST['book_now'])) {
-    $appt_date  = mysqli_real_escape_string($conn, $_POST['appt_date']);
-    $appt_time  = mysqli_real_escape_string($conn, $_POST['appt_time']);
-    $case_brief = mysqli_real_escape_string($conn, $_POST['case_brief']);
-    $mode       = mysqli_real_escape_string($conn, $_POST['consult_mode']);
+    $appt_date  = isset($_POST['appt_date']) ? mysqli_real_escape_string($conn, trim($_POST['appt_date'])) : '';
+    $appt_time  = isset($_POST['appt_time']) ? mysqli_real_escape_string($conn, trim($_POST['appt_time'])) : '';
+    $case_brief = isset($_POST['case_brief']) ? mysqli_real_escape_string($conn, trim($_POST['case_brief'])) : '';
+    $mode       = isset($_POST['consult_mode']) ? mysqli_real_escape_string($conn, trim($_POST['consult_mode'])) : 'Video';
 
     if (empty($appt_date) || empty($appt_time) || empty($case_brief)) {
         $error = "Please fill in all required fields.";
+    } elseif ($appt_date < date('Y-m-d')) {
+        $error = "Appointment date cannot be in the past.";
+    } elseif (strlen($case_brief) < 10) {
+        $error = "Case brief must be at least 10 characters long.";
     } else {
         // Get a service_id (fallback to 1)
         $svc_q      = mysqli_query($conn, "SELECT service_id FROM services LIMIT 1");
@@ -61,6 +65,17 @@ if (isset($_POST['book_now'])) {
         }
     }
 }
+
+// Fetch lawyer schedules
+$sched_q = mysqli_query($conn, "SELECT day, start_time FROM schedules WHERE lawyer_id='$lawyer_id' AND status='Available' ORDER BY start_time");
+$lawyer_schedules = [];
+while($sr = mysqli_fetch_assoc($sched_q)){
+    $d = $sr['day'];
+    $t = date('h:i A', strtotime($sr['start_time']));
+    $val = $sr['start_time'];
+    $lawyer_schedules[$d][] = ['display' => $t, 'value' => $val];
+}
+$sched_json = json_encode($lawyer_schedules);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -403,7 +418,7 @@ if (isset($_POST['book_now'])) {
 </div>
 
 <div class="container py-5">
-  <form method="POST" action="">
+  <form method="POST" action="" onsubmit="return validateBookAppointmentForm()">
     <input type="hidden" name="consult_mode" id="selectedMode" value="Video">
 
     <div class="row g-4">
@@ -438,23 +453,12 @@ if (isset($_POST['book_now'])) {
               <input type="date" name="appt_date" id="appt_date" class="form-control-lux"
                      min="<?php echo date('Y-m-d'); ?>"
                      value="<?php echo isset($_POST['appt_date']) ? htmlspecialchars($_POST['appt_date']) : ''; ?>"
-                     onchange="updateSummary()" required>
+                     onchange="onDateChange()" required>
             </div>
             <div class="col-md-6">
               <label class="form-label-lux">Preferred Time *</label>
               <select name="appt_time" id="appt_time" class="form-control-lux" onchange="updateSummary()" required>
-                <option value="" disabled selected>Select time slot</option>
-                <option value="08:00 AM">08:00 AM</option>
-                <option value="09:00 AM">09:00 AM</option>
-                <option value="10:00 AM">10:00 AM</option>
-                <option value="11:00 AM">11:00 AM</option>
-                <option value="12:00 PM">12:00 PM</option>
-                <option value="01:00 PM">01:00 PM</option>
-                <option value="02:00 PM">02:00 PM</option>
-                <option value="03:00 PM">03:00 PM</option>
-                <option value="04:00 PM">04:00 PM</option>
-                <option value="05:00 PM">05:00 PM</option>
-                <option value="06:00 PM">06:00 PM</option>
+                <option value="" disabled selected>Select date first</option>
               </select>
             </div>
           </div>
@@ -486,7 +490,7 @@ if (isset($_POST['book_now'])) {
             <label class="form-label-lux">Describe your legal matter *</label>
             <textarea name="case_brief" id="case_brief" rows="5" class="form-control-lux"
                       placeholder="Briefly describe your legal situation, the type of assistance you need, and any relevant details..."
-                      required><?php echo isset($_POST['case_brief']) ? htmlspecialchars($_POST['case_brief']) : ''; ?></textarea>
+                      required minlength="10" maxlength="1000"><?php echo isset($_POST['case_brief']) ? htmlspecialchars($_POST['case_brief']) : ''; ?></textarea>
           </div>
           
           <div class="row g-3">
@@ -565,6 +569,9 @@ if (isset($_POST['book_now'])) {
 </button>
 
 <script>
+const lawyerSchedules = <?php echo $sched_json; ?>;
+const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 function selectMode(el) {
   document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
@@ -573,11 +580,77 @@ function selectMode(el) {
   document.getElementById('sumMode').textContent = mode === 'In-Person' ? 'In-Person' : mode + ' Call';
 }
 
+function onDateChange() {
+    const dStr = document.getElementById('appt_date').value;
+    const tSel = document.getElementById('appt_time');
+    tSel.innerHTML = '<option value="" disabled selected>Select time slot</option>';
+    
+    if (dStr) {
+        const d = new Date(dStr);
+        const dayName = daysOfWeek[d.getDay()];
+        const slots = lawyerSchedules[dayName];
+        
+        if (slots && slots.length > 0) {
+            slots.forEach(slot => {
+                const opt = document.createElement('option');
+                opt.value = slot.value;
+                opt.textContent = slot.display;
+                tSel.appendChild(opt);
+            });
+        } else {
+            tSel.innerHTML = '<option value="" disabled selected>No slots available</option>';
+        }
+    }
+    updateSummary();
+}
+
 function updateSummary() {
   const d = document.getElementById('appt_date').value;
-  const t = document.getElementById('appt_time').value;
+  const tSel = document.getElementById('appt_time');
+  let displayTime = '—';
+  if (tSel.selectedIndex > 0) {
+      displayTime = tSel.options[tSel.selectedIndex].text;
+  }
+  
   document.getElementById('sumDate').textContent = d ? new Date(d).toLocaleDateString('en-GB', {day:'numeric', month:'long', year:'numeric'}) : '—';
-  document.getElementById('sumTime').textContent = t || '—';
+  document.getElementById('sumTime').textContent = displayTime;
+}
+
+function validateBookAppointmentForm() {
+  const dateInput = document.getElementById('appt_date');
+  const timeSelect = document.getElementById('appt_time');
+  const briefText = document.getElementById('case_brief');
+
+  const apptDate = dateInput ? dateInput.value : '';
+  const apptTime = timeSelect ? timeSelect.value : '';
+  const caseBrief = briefText ? briefText.value.trim() : '';
+  const today = new Date().toISOString().split('T')[0];
+
+  if (!apptDate) {
+    alert('Please select an appointment date.');
+    if (dateInput) dateInput.focus();
+    return false;
+  }
+
+  if (apptDate < today) {
+    alert('Appointment date cannot be in the past.');
+    if (dateInput) dateInput.focus();
+    return false;
+  }
+
+  if (!apptTime) {
+    alert('Please select a preferred time slot.');
+    if (timeSelect) timeSelect.focus();
+    return false;
+  }
+
+  if (!caseBrief || caseBrief.length < 10) {
+    alert('Please provide a case brief with at least 10 characters.');
+    if (briefText) briefText.focus();
+    return false;
+  }
+
+  return true;
 }
 
 window.addEventListener('scroll', () => {

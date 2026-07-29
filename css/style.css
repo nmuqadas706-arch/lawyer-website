@@ -2113,3 +2113,18 @@ img { max-width: 100%; display: block; }
 /* ──────────────────────────────────────────────────────────── */
 /* END                                                         */
 /* ──────────────────────────────────────────────────────────── */
+
+/* ============================================================
+   GLOBAL DROPDOWN VISIBILITY FIX
+   Ensures <option> text is visible against background 
+   in all modern browsers.
+   ============================================================ */
+select option,
+.luxury-input option,
+.form-control option,
+.search-select option,
+.sort-select-luxury option {
+    background-color: var(--navy, #0D1B2A) !important;
+    color: var(--white, #FFFFFF) !important;
+    padding: 8px !important;
+}

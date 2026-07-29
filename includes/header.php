@@ -41,7 +41,7 @@
         <li class="nav-item"><a class="nav-link" href="about.php">About</a></li>
         <li class="nav-item"><a class="nav-link" href="services.php">Services</a></li>
         <li class="nav-item"><a class="nav-link" href="search.php">Lawyers</a></li>
-        <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+        <li class="nav-item"><a class="nav-link" href="index.php#contact">Contact</a></li>
         <li class="nav-item ms-lg-3">
           <a class="btn-outline-gold" href="lawyer-login.php" style="padding:10px 20px; font-size:0.78rem;">
             <i class="fas fa-user-tie"></i> Join as Lawyer

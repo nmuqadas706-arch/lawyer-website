@@ -77,7 +77,18 @@ include_once 'includes/header.php';
               $fee = htmlspecialchars($row['fee'] ?? '');
               $raw_icon = trim($row['icon'] ?? '');
               if (empty($raw_icon)) {
-                  $icon = 'fas fa-balance-scale';
+                  $s_lower = strtolower($service_name);
+                  if (strpos($s_lower, 'family') !== false || strpos($s_lower, 'divorce') !== false) $icon = 'fas fa-heart';
+                  elseif (strpos($s_lower, 'property') !== false || strpos($s_lower, 'real estate') !== false) $icon = 'fas fa-home';
+                  elseif (strpos($s_lower, 'corporate') !== false || strpos($s_lower, 'business') !== false) $icon = 'fas fa-building';
+                  elseif (strpos($s_lower, 'criminal') !== false) $icon = 'fas fa-gavel';
+                  elseif (strpos($s_lower, 'civil') !== false) $icon = 'fas fa-users';
+                  elseif (strpos($s_lower, 'tax') !== false || strpos($s_lower, 'finance') !== false) $icon = 'fas fa-file-invoice-dollar';
+                  elseif (strpos($s_lower, 'labor') !== false || strpos($s_lower, 'employment') !== false) $icon = 'fas fa-user-tie';
+                  elseif (strpos($s_lower, 'immigration') !== false) $icon = 'fas fa-passport';
+                  elseif (strpos($s_lower, 'intellectual') !== false || strpos($s_lower, 'copyright') !== false) $icon = 'fas fa-lightbulb';
+                  elseif (strpos($s_lower, 'injury') !== false || strpos($s_lower, 'accident') !== false) $icon = 'fas fa-ambulance';
+                  else $icon = 'fas fa-balance-scale';
               } else {
                   // Prepend 'fas ' if the prefix is missing
                   if (strpos($raw_icon, 'fas ') === false && strpos($raw_icon, 'fab ') === false && strpos($raw_icon, 'far ') === false) {
@@ -98,20 +109,42 @@ include_once 'includes/header.php';
               $category = strtolower(explode(' ', trim($service_name))[0]);
               ?>
               <div class="col-lg-4 col-md-6 service-grid-item" data-category="<?php echo $category; ?>" id="service-<?php echo $row['service_id'] ?? ''; ?>" data-aos="fade-up" data-aos-delay="<?php echo $delay; ?>">
-                <div class="service-page-card">
-                  <div class="service-num-overlay"><?php echo $service_number; ?></div>
-                  <div class="service-page-icon"><i class="<?php echo $icon; ?>"></i></div>
-                  <h3 class="service-page-title"><?php echo $service_name; ?></h3>
-                  <p class="service-page-desc"><?php echo $description; ?></p>
-                  <ul class="service-features">
-                    <li><i class="fas fa-check-circle"></i> Consultation Fee: PKR <?php echo $fee; ?></li>
-                  </ul>
-                  <a href="search.php?area=<?php echo urlencode($service_name); ?>" class="btn-gold" style="width:100%; justify-content:center; margin-bottom:12px;">
-                    <i class="fas fa-search"></i> <?php echo $button_text; ?>
-                  </a>
-                  <a href="index.php#contact" class="btn-outline-gold" style="width:100%; justify-content:center; font-size:0.78rem;">
-                    <i class="fas fa-phone"></i> Free Consultation
-                  </a>
+                <div class="flip-card-custom" style="height: 380px;">
+                  
+                  <!-- Background Pattern or large faint icon -->
+                  <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); opacity: 0.05; transition: all 0.6s ease;" class="service-bg-icon">
+                    <i class="<?php echo $icon; ?>" style="font-size: 14rem; color: var(--gold);"></i>
+                  </div>
+                  
+                  <!-- Overlay container -->
+                  <div class="flip-card-overlay" style="background: linear-gradient(to top, rgba(13, 27, 42, 1) 0%, rgba(13, 27, 42, 0.8) 50%, rgba(13, 27, 42, 0.4) 100%); padding: 30px 20px;">
+                    
+                    <div class="text-center transition-icon" style="transition: all 0.4s ease; margin-bottom:15px;">
+                        <i class="<?php echo $icon; ?>" style="font-size:3rem; color:var(--gold); text-shadow: 0 4px 15px rgba(201,168,76,0.3);"></i>
+                    </div>
+                    <h3 class="flip-card-name" style="font-size:1.3rem;"><?php echo $service_name; ?></h3>
+                    
+                    <!-- The "View Details" hint button (visible by default, hides on hover) -->
+                    <div class="view-details-btn-static btn-outline-gold" style="padding:6px 15px; font-size:0.75rem; display:inline-block; margin-top:15px;">View Details</div>
+                    
+                    <!-- The hidden content that appears on hover -->
+                    <div class="flip-card-content">
+                      <p style="color:rgba(255,255,255,0.8); font-size:0.85rem; line-height:1.5; margin-bottom:15px;"><?php echo $description; ?></p>
+                      
+                      <div class="mb-4 text-center" style="font-size:0.85rem; color:var(--gold); font-weight: 600;">
+                         Consultation Fee: PKR <?php echo $fee; ?>
+                      </div>
+
+                      <div class="d-flex flex-column gap-2 w-100">
+                        <a href="search.php?area=<?php echo urlencode($service_name); ?>" class="btn-gold flex-fill d-inline-flex justify-content-center align-items-center" style="padding:10px 0; font-size:0.8rem;">
+                          <i class="fas fa-search me-2"></i> <?php echo $button_text; ?>
+                        </a>
+                        <a href="index.php#contact" class="btn-outline-gold flex-fill d-inline-flex justify-content-center align-items-center" style="padding:10px 0; font-size:0.8rem;">
+                          <i class="fas fa-phone me-2"></i> Free Consultation
+                        </a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <?php

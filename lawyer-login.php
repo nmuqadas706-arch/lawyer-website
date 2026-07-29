@@ -2,27 +2,37 @@
 session_start();
 include_once 'includes/connection.php';
 
+$login_error = "";
+
 if (isset($_POST['login'])) {
 
-    $email = $_POST['txt_email'];
-    $password = $_POST['txt_password'];
+    $email = isset($_POST['txt_email']) ? trim($_POST['txt_email']) : '';
+    $password = isset($_POST['txt_password']) ? $_POST['txt_password'] : '';
 
-    $query = "SELECT * FROM lawyers WHERE email='$email' AND password='$password'";
-    $result = mysqli_query($conn, $query);
-
-    if (mysqli_num_rows($result) > 0) {
-
-        $row = mysqli_fetch_assoc($result);
-
-        $_SESSION['lawyer_id'] = $row['lawyer_id'];
-        $_SESSION['lawyer_name'] = $row['full_name'];
-
-        header("Location: lawyerdashboard.php");
-        exit();
-
+    if (empty($email) || empty($password)) {
+        $login_error = "Please fill in all required fields.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $login_error = "Please enter a valid email address.";
+    } elseif (strlen($password) < 6) {
+        $login_error = "Password must be at least 6 characters long.";
     } else {
-        header("Location: lawyer-login.php");
-        exit();
+        $email_safe = mysqli_real_escape_string($conn, $email);
+        $password_safe = mysqli_real_escape_string($conn, $password);
+
+        $query = "SELECT * FROM lawyers WHERE email='$email_safe' AND password='$password_safe'";
+        $result = mysqli_query($conn, $query);
+
+        if ($result && mysqli_num_rows($result) > 0) {
+            $row = mysqli_fetch_assoc($result);
+
+            $_SESSION['lawyer_id'] = $row['lawyer_id'];
+            $_SESSION['lawyer_name'] = $row['full_name'];
+
+            header("Location: lawyerdashboard.php");
+            exit();
+        } else {
+            $login_error = "Invalid email or password.";
+        }
     }
 }
 ?>
@@ -134,11 +144,11 @@ if (isset($_POST['login'])) {
         <p style="font-size:0.85rem; color:var(--text-muted);">Sign in to manage your practice dashboard</p>
       </div>
 
-      <form id="lawyerLoginForm" method="post">
+      <form id="lawyerLoginForm" method="post" onsubmit="return validateLawyerLogin();">
         <!-- Email -->
         <div class="form-field-luxury">
           <label for="email">Registered Email</label>
-          <input type="email" class="luxury-input form-control" id="email" placeholder="attorney@lawfirm.com" name="txt_email" required autocomplete="email">
+          <input type="email" class="luxury-input form-control" id="email" placeholder="attorney@lawfirm.com" name="txt_email" required maxlength="100" autocomplete="email">
         </div>
         
         <!-- Password -->
@@ -147,7 +157,7 @@ if (isset($_POST['login'])) {
             <label for="password" style="margin-bottom:0;">Password</label>
             <a href="#" class="text-decoration-none" style="font-size:0.72rem; color:var(--gold); font-weight:600;" onclick="showToast('Password reset link sent to your email.'); return false;">Forgot Password?</a>
           </div>
-          <input type="password" class="luxury-input form-control" id="password" placeholder="Enter your password" name="txt_password" required autocomplete="current-password">
+          <input type="password" class="luxury-input form-control" id="password" placeholder="Enter your password" name="txt_password" required minlength="6" maxlength="50" autocomplete="current-password">
         </div>
 
         <!-- Remember Me -->
@@ -160,6 +170,11 @@ if (isset($_POST['login'])) {
         <button type="submit" class="btn-gold w-100" style="justify-content:center; padding:14px; " name="login">
           <i class="fas fa-sign-in-alt me-2"></i>Sign In to Dashboard
         </button>
+        <?php
+        if(!empty($login_error)) {
+            echo "<div class='alert alert-danger mt-3'>$login_error</div>";
+        }
+        ?>
       </form>
     
       <!-- Switch Screen Link -->
@@ -191,7 +206,25 @@ if (isset($_POST['login'])) {
     setTimeout(() => $('#toastBox').fadeOut(400), 2500);
   }
 
- 
+  function validateLawyerLogin() {
+    var email = document.getElementById('email').value.trim();
+    var password = document.getElementById('password').value;
+    var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (email === "" || password === "") {
+      alert("Please fill in both Email and Password fields.");
+      return false;
+    }
+    if (!emailPattern.test(email)) {
+      alert("Please enter a valid email address.");
+      return false;
+    }
+    if (password.length < 6) {
+      alert("Password must be at least 6 characters long.");
+      return false;
+    }
+    return true;
+  }
 </script>
 </body>
 </html>

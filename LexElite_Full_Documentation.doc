@@ -1,0 +1,243 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+      xmlns:w="urn:schemas-microsoft-com:office:word"
+      xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>LexElite Documentation</title>
+<style>
+    body { font-family: "Calibri", "Arial", sans-serif; font-size: 12pt; line-height: 1.5; color: #000; }
+    h1 { font-family: "Georgia", serif; font-size: 28pt; color: #0D1B3E; text-align: center; }
+    h2 { font-family: "Georgia", serif; font-size: 18pt; color: #C9A84C; margin-top: 24pt; border-bottom: 2px solid #C9A84C; padding-bottom: 5pt; }
+    h3 { font-family: "Georgia", serif; font-size: 14pt; color: #1A2F60; }
+    p { margin-bottom: 12pt; text-align: justify; }
+    .cover { text-align: center; margin-top: 100pt; margin-bottom: 100pt; }
+    .cover p { text-align: center; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12pt; margin-bottom: 12pt; }
+    table, th, td { border: 1px solid black; }
+    th { background-color: #0D1B3E; color: white; padding: 8pt; text-align: left; }
+    td { padding: 8pt; }
+    ul, ol { margin-bottom: 12pt; }
+    .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+    <!-- Cover Page -->
+    <div class="cover">
+        <h2 style="border:none; text-align:center;">ONLINE LAWYERS APPLICATION WEBSITE</h2>
+        <h1>LEXELITE</h1>
+        <p><strong>POWERED BY MODERN INNOVATION</strong><br>Discover a powerful legal platform built for speed, efficiency, and secure connections. Find verified attorneys, book consultations, and manage your legal needs all in one place.</p>
+        <br><br><br>
+        <p><strong>PREPARED BY:</strong> Saman Asif</p>
+        <p><strong>PROJECT:</strong> Semester II Final E-Project</p>
+        <p><strong>SUBMITTED TO:</strong> Aptech Computer Education</p>
+    </div>
+
+    <div class="page-break"></div>
+
+    <h2>Table of Contents</h2>
+    <ol>
+        <li>Project Overview</li>
+        <li>Introduction</li>
+        <li>Problem Statement</li>
+        <li>Objectives</li>
+        <li>Project Scope</li>
+        <li>Existing System</li>
+        <li>Proposed System</li>
+        <li>System Features</li>
+        <li>Functional Requirements</li>
+        <li>Software Requirements</li>
+        <li>Hardware Requirements</li>
+        <li>Database Design</li>
+        <li>System Architecture</li>
+        <li>Project Workflow</li>
+        <li>User Interface</li>
+        <li>Key Modules</li>
+        <li>Database Tables</li>
+        <li>Advantages</li>
+        <li>Testing</li>
+        <li>Conclusion</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h2>1. Project Overview</h2>
+    <p>LexElite is a full-stack web application designed to digitize and simplify the process of finding verified lawyers and booking legal consultations. The platform connects three types of users — Administrators, Lawyers, and Customers (Clients) — through dedicated, role-based dashboards, each offering functionality tailored to that user's responsibilities within the system.</p>
+    <p>The system was built using PHP with procedural MySQLi for all database interactions, styled with Bootstrap and custom CSS, and enhanced with JavaScript for interactivity. It follows a straightforward architecture, making it easy to understand, maintain, and extend. At its core, the platform allows clients to discover verified attorneys, book appointments, and track their case status, while giving lawyers the tools to manage incoming requests, and giving administrators complete oversight of the entire network.</p>
+
+    <h2>2. Introduction</h2>
+    <p>The legal sector has traditionally relied on manual coordination, word-of-mouth, and physical directories. Finding the right lawyer and scheduling an appointment can be a tedious and opaque process. Clients often lack transparent information regarding a lawyer's credentials and expertise.</p>
+    <p>In response to this challenge, LexElite was developed as a digital solution that brings lawyers, administrators, and clients onto a single, unified platform. The system eliminates the need for numerous phone calls or walk-in visits just to check availability, replacing them with a simple, secure, and always-available web interface.</p>
+
+    <h2>3. Problem Statement</h2>
+    <p>Prior to systems like LexElite, clients seeking legal assistance had to rely on disconnected processes: calling law firms directly, searching unverified online directories, or relying on personal recommendations. Lawyers, in turn, had limited ways to digitally market their specific expertise and manage appointments without hiring dedicated administrative staff.</p>
+    <p>This lack of a centralized system led to delayed appointment confirmations, difficulty in verifying credentials, and limited reach for experienced lawyers. There was a clear need for a unified platform to connect stakeholders securely and transparently.</p>
+
+    <h2>4. Objectives</h2>
+    <ul>
+        <li>To provide clients with a simple, self-service platform to search for verified lawyers and book consultations online.</li>
+        <li>To give lawyers a dedicated dashboard to manage appointment requests, update their profiles, and manage availability.</li>
+        <li>To provide administrators with complete oversight of the platform, including lawyer approval, user management, and reporting.</li>
+        <li>To maintain accurate, centralized digital records of appointments and legal services.</li>
+        <li>To design a responsive, modern, and professional user interface accessible on desktop, tablet, and mobile devices.</li>
+    </ul>
+
+    <h2>5. Project Scope</h2>
+    <p>The scope of the LexElite system covers the complete lifecycle of a legal consultation appointment — from lawyer registration and approval, through client discovery and booking, to final appointment completion. The system is composed of three fully functional panels:</p>
+    <ul>
+        <li><strong>Admin Panel:</strong> For managing lawyers, clients, services, bookings, and generating reports.</li>
+        <li><strong>Lawyer Panel:</strong> For managing client requests, profile details, and appointment status.</li>
+        <li><strong>Customer Panel:</strong> For searching lawyers, booking appointments, and viewing personal booking history.</li>
+    </ul>
+
+    <div class="page-break"></div>
+
+    <h2>6. Existing System</h2>
+    <p>Before systems like LexElite, legal consultation booking relied heavily on manual coordination. Clients would typically call offices directly or visit in person, with no way to check real-time availability or clearly compare lawyer expertise. Lawyers had no unified digital system to manage incoming requests seamlessly, leading to scheduling conflicts and inefficiencies. Administrators similarly lacked centralized tools to monitor legitimate legal service providers.</p>
+
+    <h2>7. Proposed System</h2>
+    <p>LexElite addresses the shortcomings of the existing manual process by introducing a fully digital, role-based web platform. Every interaction — from lawyer registration to appointment booking — happens through a structured, database-backed system. Lawyers must be verified and approved by an administrator before appearing publicly, ensuring clients only interact with legitimate attorneys. Clients can search, filter, and book appointments in a few clicks.</p>
+
+    <h2>8. System Features</h2>
+    <h3>Admin Panel Features</h3>
+    <ul>
+        <li>Dashboard with system-wide statistics (lawyers, clients, bookings).</li>
+        <li>Lawyer management — view, edit, delete, and approve/reject lawyer registrations.</li>
+        <li>Customer management — view, edit, and delete client records.</li>
+        <li>Booking oversight — view and filter all appointments across the platform.</li>
+    </ul>
+    <h3>Lawyer Panel Features</h3>
+    <ul>
+        <li>Dashboard with lawyer-specific statistics (total clients, pending/approved/rejected requests).</li>
+        <li>Client request management — approve or reject incoming appointment requests.</li>
+        <li>Lawyer profile management, including profile image and expertise updates.</li>
+    </ul>
+    <h3>Customer Panel Features</h3>
+    <ul>
+        <li>Search and filter verified lawyers by name, category, or location.</li>
+        <li>Book consultation appointments with a chosen lawyer.</li>
+        <li>View personal appointment history and current status.</li>
+        <li>Manage personal profile information.</li>
+    </ul>
+
+    <h2>9. Functional Requirements</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Requirement</th>
+                <th>Admin Panel</th>
+                <th>Lawyer Panel</th>
+                <th>Customer Panel</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td>Login System</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+            <tr><td>Registration</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+            <tr><td>Appointment Booking</td><td>No</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Approve Requests</td><td>No</td><td>Yes</td><td>No</td></tr>
+            <tr><td>Approve Lawyers</td><td>Yes</td><td>No</td><td>No</td></tr>
+            <tr><td>Search Lawyers</td><td>No</td><td>No</td><td>Yes</td></tr>
+            <tr><td>Profile Management</td><td>Yes</td><td>Yes</td><td>Yes</td></tr>
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <h2>10. Software Requirements</h2>
+    <ul>
+        <li><strong>HTML/CSS:</strong> Structure and custom styling.</li>
+        <li><strong>JavaScript:</strong> Client-side interactivity and form validations.</li>
+        <li><strong>PHP:</strong> Server-side logic and application processing.</li>
+        <li><strong>MySQL:</strong> Relational database management system.</li>
+        <li><strong>XAMPP:</strong> Local development server (Apache + MySQL + PHP).</li>
+        <li><strong>Bootstrap:</strong> Responsive front-end component framework.</li>
+    </ul>
+
+    <h2>11. Hardware Requirements</h2>
+    <table>
+        <tbody>
+            <tr><td><strong>Processor</strong></td><td>Dual-Core 2.0 GHz or higher</td></tr>
+            <tr><td><strong>RAM</strong></td><td>4 GB (8 GB recommended)</td></tr>
+            <tr><td><strong>Storage</strong></td><td>2 GB of free disk space</td></tr>
+            <tr><td><strong>Display</strong></td><td>1366 x 768 resolution or higher</td></tr>
+        </tbody>
+    </table>
+
+    <h2>12. Database Design</h2>
+    <p>The LexElite system uses a relational MySQL database connecting tables for administrators, lawyers, customers, services, and appointments through foreign key relationships. The appointments table acts as the central link between clients and lawyers.</p>
+
+    <h2>13. System Architecture</h2>
+    <p>LexElite follows a traditional three-tier web application architecture:</p>
+    <ul>
+        <li><strong>Presentation Layer:</strong> Built using HTML, CSS, Bootstrap, and JS to render responsive interfaces.</li>
+        <li><strong>Application Layer:</strong> Implemented in procedural PHP to handle business logic, session-based authentication, and role-based access control.</li>
+        <li><strong>Data Layer:</strong> A MySQL relational database storing all persistent data securely.</li>
+    </ul>
+
+    <h2>14. Project Workflow</h2>
+    <ol>
+        <li>Lawyer / Customer Registration</li>
+        <li>Admin Reviews & Approves Lawyer</li>
+        <li>Customer Logs In & Searches for Lawyers</li>
+        <li>Customer Books an Appointment</li>
+        <li>Lawyer Reviews & Approves / Rejects Request</li>
+        <li>Customer Views Appointment Status</li>
+    </ol>
+
+    <div class="page-break"></div>
+
+    <h2>15. User Interface</h2>
+    <p><em>(Screenshots of the application interfaces such as Home Page, About Page, Admin Dashboard, Lawyer Dashboard, Customer Dashboard, Login/Registration forms, and Appointment Booking screens are to be inserted here.)</em></p>
+
+    <h2>16. Key Modules</h2>
+    <ul>
+        <li><strong>Admin Module:</strong> The control center granting full authority over lawyer approval, client oversight, and reporting.</li>
+        <li><strong>Lawyer Module:</strong> Equips attorneys with tools to manage their daily interactions, review appointment requests, and maintain an up-to-date profile.</li>
+        <li><strong>Customer Module:</strong> The primary point of interaction for end users to discover lawyers, book appointments, and track consultation history.</li>
+    </ul>
+
+    <h2>17. Database Tables</h2>
+    <ul>
+        <li><strong>admin:</strong> Stores administrator login credentials.</li>
+        <li><strong>lawyers:</strong> Stores lawyer registration details, category, profile image, and approval status (Pending/Approved/Rejected).</li>
+        <li><strong>customers:</strong> Stores client registration details, contact info, and passwords.</li>
+        <li><strong>appointments:</strong> The central booking table linking a customer and lawyer together with an appointment date, time, and status.</li>
+        <li><strong>services:</strong> Stores the legal categories and specialized services offered on the platform.</li>
+    </ul>
+
+    <h2>18. Advantages</h2>
+    <ul>
+        <li>Centralized platform connecting clients, lawyers, and administrators.</li>
+        <li>Eliminates manual, paper-based appointment booking.</li>
+        <li>Gives clients permanent, digital access to their booking history.</li>
+        <li>Ensures only verified, admin-approved lawyers are visible to clients.</li>
+        <li>Fully responsive design ensures accessibility across devices.</li>
+    </ul>
+
+    <h2>19. Testing</h2>
+    <p>The system was manually tested across all three panels. Key test cases include:</p>
+    <ul>
+        <li><strong>Admin Login:</strong> Redirects to Admin Dashboard on valid credentials. (Passed)</li>
+        <li><strong>Lawyer Registration:</strong> New lawyer saved with Pending status. (Passed)</li>
+        <li><strong>Lawyer Approval:</strong> Admin can approve/reject a lawyer. (Passed)</li>
+        <li><strong>Book Appointment:</strong> Customer appointment created with Pending status. (Passed)</li>
+        <li><strong>Approve Request:</strong> Lawyer can update appointment status. (Passed)</li>
+    </ul>
+
+    <h2>20. Conclusion</h2>
+    <p>The LexElite system successfully demonstrates how a structured web application can digitize and simplify legal consultations. By connecting clients, lawyers, and administrators, the system reduces friction from lawyer discovery to appointment booking. Built with PHP and MySQL, it provides a solid foundation for secure, transparent legal networking.</p>
+
+    <div class="page-break"></div>
+
+    <h2>Certificate of Completion</h2>
+    <div style="border: 4px double #C9A84C; padding: 40pt; text-align: center; margin-top: 40pt;">
+        <h3 style="font-size: 24pt; margin-bottom: 20pt; color: #0D1B3E;">THE CERTIFICATE IS PRESENTED TO</h3>
+        <h1 style="font-size: 32pt; color: #C9A84C; margin-bottom: 20pt;">Saman Asif</h1>
+        <p style="font-size: 14pt;">This is to certify that Saman Asif has successfully completed their ACCP Semester II final E-Project on the <strong>"Online Lawyers Application Website (LexElite)"</strong>.</p>
+        <br><br>
+        <p style="font-size: 14pt;"><strong>SUBMITTED TO:</strong> APTECH COMPUTER EDUCATION</p>
+        <p style="font-size: 14pt;"><strong>DATE:</strong> July 26, 2026</p>
+    </div>
+
+</body>
+</html>

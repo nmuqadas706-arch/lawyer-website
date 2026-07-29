@@ -1,11 +1,109 @@
 <?php
 include_once 'includes/connection.php';
+session_start();
 
-$id = $_GET['id'];
+// ── PHP Validation & Update Handler (must be before HTML output) ──
+if (isset($_POST['btn_update'])) {
+    $id             = mysqli_real_escape_string($conn, trim($_POST['lawyer_id'] ?? ''));
+    $name           = mysqli_real_escape_string($conn, trim($_POST['txt_name'] ?? ''));
+    $email          = mysqli_real_escape_string($conn, trim($_POST['txt_email'] ?? ''));
+    $phone          = mysqli_real_escape_string($conn, trim($_POST['txt_phone'] ?? ''));
+    $cnic           = mysqli_real_escape_string($conn, trim($_POST['txt_cnic'] ?? ''));
+    $qualification  = mysqli_real_escape_string($conn, trim($_POST['txt_qualification'] ?? ''));
+    $experience     = (int)($_POST['txt_experience'] ?? 0);
+    $specialization = mysqli_real_escape_string($conn, trim($_POST['txt_specialization'] ?? ''));
+    $fee            = (float)($_POST['txt_consultation_fee'] ?? 0);
+    $bio            = mysqli_real_escape_string($conn, trim($_POST['txt_bio'] ?? ''));
+    $city           = mysqli_real_escape_string($conn, trim($_POST['txt_city'] ?? ''));
+    $address        = mysqli_real_escape_string($conn, trim($_POST['txt_office_address'] ?? ''));
 
+    $errors = [];
+
+    if (empty($name) || strlen($name) < 3 || !preg_match('/^[A-Za-z\s.\'\-]+$/u', $name)) {
+        $errors[] = "Full Name must be at least 3 characters (letters only, no numbers).";
+    }
+    if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Please enter a valid email address.";
+    }
+    if (empty($phone) || !preg_match('/^[0-9+\-\s]{10,15}$/', $phone)) {
+        $errors[] = "Please enter a valid phone number (10-15 digits).";
+    }
+    if (empty($cnic) || !preg_match('/^\d{5}-\d{7}-\d{1}$/', $cnic)) {
+        $errors[] = "CNIC must be in the format XXXXX-XXXXXXX-X (e.g. 12345-6789012-3).";
+    }
+    if (empty($qualification) || strlen($qualification) < 2) {
+        $errors[] = "Qualification must be at least 2 characters long.";
+    }
+    if ($experience < 0 || $experience > 60) {
+        $errors[] = "Years of Experience must be between 0 and 60.";
+    }
+    if (empty($specialization)) {
+        $errors[] = "Please select a specialization.";
+    }
+    if ($fee < 0) {
+        $errors[] = "Consultation Fee cannot be negative.";
+    }
+    if (empty($bio) || strlen($bio) < 10) {
+        $errors[] = "Professional Bio must be at least 10 characters long.";
+    }
+    if (empty($city) || strlen($city) < 2) {
+        $errors[] = "City must be at least 2 characters long.";
+    }
+    if (empty($address) || strlen($address) < 5) {
+        $errors[] = "Office Address must be at least 5 characters long.";
+    }
+
+    // Image validation
+    $img_sql = '';
+    if (isset($_FILES['txt_profile_picture']) && $_FILES['txt_profile_picture']['name'] != '') {
+        $ext     = strtolower(pathinfo($_FILES['txt_profile_picture']['name'], PATHINFO_EXTENSION));
+        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
+        if (!in_array($ext, $allowed)) {
+            $errors[] = "Invalid image format. Allowed formats: JPG, JPEG, PNG, WEBP.";
+        } elseif ($_FILES['txt_profile_picture']['size'] > 2097152) {
+            $errors[] = "Profile image size must not exceed 2MB.";
+        } else {
+            $profile_image = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '', $_FILES['txt_profile_picture']['name']);
+            if (move_uploaded_file($_FILES['txt_profile_picture']['tmp_name'], 'uploads/' . $profile_image)) {
+                $img_sql = ", profile_image='$profile_image'";
+            }
+        }
+    }
+
+    if (empty($errors)) {
+        $query = "UPDATE lawyers SET
+            full_name='$name',
+            email='$email',
+            phone='$phone',
+            cnic_no='$cnic',
+            qualification='$qualification',
+            experience='$experience',
+            specialization='$specialization',
+            consultation_fee='$fee',
+            bio='$bio',
+            city='$city',
+            address='$address'$img_sql
+            WHERE lawyer_id='$id'";
+
+        if (mysqli_query($conn, $query)) {
+            echo "<script>alert('Lawyer profile updated successfully!'); window.location='admin.php';</script>";
+            exit();
+        } else {
+            echo "<script>alert('Database error: " . addslashes(mysqli_error($conn)) . "');</script>";
+        }
+    } else {
+        $err_msg = implode('\n', $errors);
+        echo "<script>alert('" . addslashes($err_msg) . "');</script>";
+    }
+}
+
+// Fetch lawyer data
+$id = isset($_GET['id']) ? mysqli_real_escape_string($conn, $_GET['id']) : (isset($_POST['lawyer_id']) ? mysqli_real_escape_string($conn, $_POST['lawyer_id']) : '');
 $query = mysqli_query($conn, "SELECT * FROM lawyers WHERE lawyer_id='$id'");
-
 $row = mysqli_fetch_assoc($query);
+if (!$row) {
+    die('<h3 style="color:white;padding:2rem;">Error: Lawyer not found. <a href="admin.php" style="color:gold;">Go Back</a></h3>');
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -705,7 +803,7 @@ $row = mysqli_fetch_assoc($query);
         <!-- Card Body -->
         <div class="card-body-premium">
 
-          <form id="lawyerRegisterForm" method="POST" enctype="multipart/form-data">
+          <form id="lawyerRegisterForm" method="POST" enctype="multipart/form-data" onsubmit="return validateLawyerEditForm()">
 
             <!-- Hidden Lawyer ID -->
             <input type="hidden" name="lawyer_id" value="<?php echo $row['lawyer_id']; ?>">
@@ -754,9 +852,12 @@ $row = mysqli_fetch_assoc($query);
                   <input type="text"
                     id="fullName"
                     name="txt_name"
-                    value="<?php echo $row['full_name']; ?>"
+                    value="<?php echo htmlspecialchars($row['full_name']); ?>"
                     class="luxury-input form-control"
-                    placeholder="Enter full name">
+                    placeholder="Enter full name"
+                    required minlength="3" maxlength="100"
+                    pattern="[A-Za-z .'\-]+"
+                    title="Name mein sirf letters, spaces, dots, hyphens allowed hain">
                 </div>
               </div>
 
@@ -769,9 +870,10 @@ $row = mysqli_fetch_assoc($query);
                   <input type="email"
                     id="email"
                     name="txt_email"
-                    value="<?php echo $row['email']; ?>"
+                    value="<?php echo htmlspecialchars($row['email']); ?>"
                     class="luxury-input form-control"
-                    placeholder="lawyer@example.com">
+                    placeholder="lawyer@example.com"
+                    required maxlength="150">
                 </div>
               </div>
 
@@ -784,9 +886,11 @@ $row = mysqli_fetch_assoc($query);
                   <input type="tel"
                     id="phone"
                     name="txt_phone"
-                    value="<?php echo $row['phone']; ?>"
+                    value="<?php echo htmlspecialchars($row['phone']); ?>"
                     class="luxury-input form-control"
-                    placeholder="+92 300 1234567">
+                    placeholder="+92 300 1234567"
+                    required pattern="[0-9+\-\s]{10,15}"
+                    title="Enter a valid phone number (10-15 digits)">
                 </div>
               </div>
 
@@ -799,9 +903,11 @@ $row = mysqli_fetch_assoc($query);
                   <input type="text"
                     id="cnic"
                     name="txt_cnic"
-                    value="<?php echo $row['cnic_no']; ?>"
+                    value="<?php echo htmlspecialchars($row['cnic_no']); ?>"
                     class="luxury-input form-control"
-                    placeholder="XXXXX-XXXXXXX-X">
+                    placeholder="XXXXX-XXXXXXX-X"
+                    required pattern="\d{5}-\d{7}-\d{1}"
+                    title="CNIC format: XXXXX-XXXXXXX-X (e.g. 12345-6789012-3)">
                 </div>
               </div>
             </div>
@@ -825,9 +931,9 @@ $row = mysqli_fetch_assoc($query);
                   <input type="text"
                     class="luxury-input form-control"
                     name="txt_qualification"
-                    value="<?php echo $row['qualification']; ?>"
+                    value="<?php echo htmlspecialchars($row['qualification']); ?>"
                     placeholder="e.g. LLB, LLM"
-                    required>
+                    required minlength="2" maxlength="100">
                 </div>
               </div>
 
@@ -840,9 +946,9 @@ $row = mysqli_fetch_assoc($query);
                   <input type="number"
                     class="luxury-input form-control"
                     name="txt_experience"
-                    value="<?php echo $row['experience']; ?>"
+                    value="<?php echo htmlspecialchars($row['experience']); ?>"
                     placeholder="e.g. 5"
-                    required>
+                    required min="0" max="60">
                 </div>
               </div>
 
@@ -881,9 +987,9 @@ $row = mysqli_fetch_assoc($query);
                   <input type="number"
                     class="luxury-input form-control"
                     name="txt_consultation_fee"
-                    value="<?php echo $row['consultation_fee']; ?>"
+                    value="<?php echo htmlspecialchars($row['consultation_fee']); ?>"
                     placeholder="e.g. 5000"
-                    required>
+                    required min="0">
                 </div>
               </div>
 
@@ -897,7 +1003,7 @@ $row = mysqli_fetch_assoc($query);
                     name="txt_bio"
                     rows="4"
                     placeholder="Brief professional biography..."
-                    required><?php echo $row['bio']; ?></textarea>
+                    required minlength="10" maxlength="2000"><?php echo htmlspecialchars($row['bio']); ?></textarea>
                 </div>
               </div>
             </div>
@@ -921,9 +1027,9 @@ $row = mysqli_fetch_assoc($query);
                   <input type="text"
                     class="luxury-input form-control"
                     name="txt_city"
-                    value="<?php echo $row['city']; ?>"
+                    value="<?php echo htmlspecialchars($row['city']); ?>"
                     placeholder="e.g. Lahore"
-                    required>
+                    required minlength="2" maxlength="100">
                 </div>
               </div>
 
@@ -936,9 +1042,9 @@ $row = mysqli_fetch_assoc($query);
                   <input type="text"
                     class="luxury-input form-control"
                     name="txt_office_address"
-                    value="<?php echo $row['address']; ?>"
+                    value="<?php echo htmlspecialchars($row['address']); ?>"
                     placeholder="Full office address"
-                    required>
+                    required minlength="5" maxlength="255">
                 </div>
               </div>
             </div>
@@ -981,6 +1087,89 @@ $row = mysqli_fetch_assoc($query);
         reader.readAsDataURL(input.files[0]);
       }
     }
+
+    function validateLawyerEditForm() {
+      var name      = document.getElementById('fullName').value.trim();
+      var email     = document.getElementById('email').value.trim();
+      var phone     = document.getElementById('phone').value.trim();
+      var cnic      = document.getElementById('cnic').value.trim();
+      var qual      = document.querySelector('input[name="txt_qualification"]').value.trim();
+      var exp       = parseInt(document.querySelector('input[name="txt_experience"]').value);
+      var spec      = document.querySelector('select[name="txt_specialization"]').value;
+      var fee       = parseFloat(document.querySelector('input[name="txt_consultation_fee"]').value);
+      var bio       = document.querySelector('textarea[name="txt_bio"]').value.trim();
+      var city      = document.querySelector('input[name="txt_city"]').value.trim();
+      var address   = document.querySelector('input[name="txt_office_address"]').value.trim();
+      var photoInput = document.getElementById('photoInput');
+
+      var nameRegex  = /^[A-Za-z .'\-]+$/;
+      var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      var phoneRegex = /^[0-9+\-\s]{10,15}$/;
+      var cnicRegex  = /^\d{5}-\d{7}-\d{1}$/;
+
+      if (!name || name.length < 3) {
+        alert('Full Name must be at least 3 characters long.');
+        return false;
+      }
+      if (!nameRegex.test(name)) {
+        alert('Full Name can only contain letters, spaces, dots, hyphens, and apostrophes.');
+        return false;
+      }
+      if (!email || !emailRegex.test(email)) {
+        alert('Please enter a valid email address.');
+        return false;
+      }
+      if (!phone || !phoneRegex.test(phone)) {
+        alert('Please enter a valid phone number (10-15 digits).');
+        return false;
+      }
+      if (!cnic || !cnicRegex.test(cnic)) {
+        alert('CNIC must be in the format XXXXX-XXXXXXX-X (e.g. 12345-6789012-3).');
+        return false;
+      }
+      if (!qual || qual.length < 2) {
+        alert('Qualification must be at least 2 characters long.');
+        return false;
+      }
+      if (isNaN(exp) || exp < 0 || exp > 60) {
+        alert('Years of Experience must be a number between 0 and 60.');
+        return false;
+      }
+      if (!spec) {
+        alert('Please select a specialization.');
+        return false;
+      }
+      if (isNaN(fee) || fee < 0) {
+        alert('Consultation Fee must be a valid non-negative number.');
+        return false;
+      }
+      if (!bio || bio.length < 10) {
+        alert('Professional Bio must be at least 10 characters long.');
+        return false;
+      }
+      if (!city || city.length < 2) {
+        alert('City must be at least 2 characters long.');
+        return false;
+      }
+      if (!address || address.length < 5) {
+        alert('Office Address must be at least 5 characters long.');
+        return false;
+      }
+      if (photoInput && photoInput.files.length > 0) {
+        var file = photoInput.files[0];
+        var allowedExts = ['jpg', 'jpeg', 'png', 'webp'];
+        var ext = file.name.split('.').pop().toLowerCase();
+        if (!allowedExts.includes(ext)) {
+          alert('Invalid image format. Allowed formats: JPG, JPEG, PNG, WEBP.');
+          return false;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+          alert('Profile image size must not exceed 2MB.');
+          return false;
+        }
+      }
+      return true;
+    }
   </script>
 
 </body>
@@ -988,67 +1177,5 @@ $row = mysqli_fetch_assoc($query);
 </html>
 
 <?php
-include_once 'includes/connection.php';
-
-if(isset($_POST['btn_update'])){
-
-    $id = $_POST['lawyer_id'];
-
-    $name = $_POST['txt_name'];
-    $email = $_POST['txt_email'];
-    $phone = $_POST['txt_phone'];
-    $qualification = $_POST['txt_qualification'];
-    $experience = $_POST['txt_experience'];
-    $cnic = $_POST['txt_cnic'];
-    $specialization = $_POST['txt_specialization'];
-    $fee = $_POST['txt_consultation_fee'];
-    $bio = $_POST['txt_bio'];
-    $city = $_POST['txt_city'];
-    $address = $_POST['txt_office_address'];
-    
-    // Default query without image update
-    $query = "UPDATE lawyers SET
-        full_name='$name',
-        email='$email',
-        phone='$phone',
-        qualification='$qualification',
-        experience='$experience',
-        cnic_no='$cnic',
-        specialization='$specialization',
-        consultation_fee='$fee',
-        bio='$bio',
-        city='$city',
-        address='$address'";
-
-    // Handle image upload if a new file is provided
-    if(isset($_FILES['txt_profile_picture']) && $_FILES['txt_profile_picture']['name'] != ""){
-        $image_name = $_FILES['txt_profile_picture']['name'];
-        $tmp_name = $_FILES['txt_profile_picture']['tmp_name'];
-        $profile_image = time().'_'.$image_name;
-        
-        // Ensure destination folder is "uploads/" 
-        move_uploaded_file($tmp_name, "uploads/".$profile_image);
-        
-        // Append image update to query
-        $query .= ", profile_image='$profile_image'";
-    }
-
-    $query .= " WHERE lawyer_id='$id'";
-        
-    $result = mysqli_query($conn,$query);
-
-
-    if($result){
-        echo "
-        <script>
-        alert('Lawyer Updated Successfully');
-        window.location='admin.php';
-        </script>";
-    }
-    else{
-        echo "Error: ".mysqli_error($conn);
-    }
-
-}
-
+// All processing handled at the top of this file.
 ?>

@@ -8,6 +8,157 @@ if (!isset($_SESSION['admin_id'])) {
   exit();
 }
 
+$admin_name = isset($_SESSION['admin_name']) ? $_SESSION['admin_name'] : 'Admin';
+$admin_initials = strtoupper(substr($admin_name, 0, 2));
+
+// ===================== ACTION HANDLERS ===================== //
+
+if (isset($_GET['delete_message'])) {
+    $msg_id = (int)$_GET['delete_message'];
+    mysqli_query($conn, "DELETE FROM contact_messages WHERE message_id=$msg_id");
+    header("Location: admin.php?tab=contact");
+    exit();
+}
+
+/* ===== ADD SERVICE ===== */
+if (isset($_POST['submit_service'])) {
+    $service_name   = isset($_POST['service_name']) ? mysqli_real_escape_string($conn, trim($_POST['service_name'])) : '';
+    $description    = isset($_POST['description']) ? mysqli_real_escape_string($conn, trim($_POST['description'])) : '';
+    $fee            = isset($_POST['fee']) ? (float)$_POST['fee'] : 0;
+    $service_number = isset($_POST['service_number']) ? (int)$_POST['service_number'] : 1;
+
+    if (!empty($service_name) && !empty($description) && $fee > 0) {
+        if (strlen($service_name) < 3) {
+            echo "<script>alert('Service Name must be at least 3 characters long.'); window.history.back();</script>";
+            exit();
+        }
+        if (strlen($description) < 10) {
+            echo "<script>alert('Description must be at least 10 characters long.'); window.history.back();</script>";
+            exit();
+        }
+        if ($fee <= 0) {
+            echo "<script>alert('Fee must be greater than 0.'); window.history.back();</script>";
+            exit();
+        }
+        $insert_query = "INSERT INTO services (service_name, description, fee, service_number) VALUES ('$service_name', '$description', '$fee', '$service_number')";
+        mysqli_query($conn, $insert_query);
+    } else {
+        echo "<script>alert('Please fill all required fields correctly (Fee must be greater than 0).'); window.history.back();</script>";
+        exit();
+    }
+    header("Location: admin.php");
+    exit();
+}
+
+/* ===== UPDATE SERVICE ===== */
+if (isset($_POST['update_service'])) {
+    $service_id     = (int) $_POST['edit_service_id'];
+    $service_name   = isset($_POST['edit_service_name']) ? mysqli_real_escape_string($conn, trim($_POST['edit_service_name'])) : '';
+    $description    = isset($_POST['edit_description']) ? mysqli_real_escape_string($conn, trim($_POST['edit_description'])) : '';
+    $fee            = isset($_POST['edit_fee']) ? (float)$_POST['edit_fee'] : 0;
+    $service_number = isset($_POST['edit_service_number']) ? (int)$_POST['edit_service_number'] : 1;
+
+    if ($service_id > 0 && !empty($service_name) && !empty($description) && $fee > 0) {
+        if (strlen($service_name) < 3) {
+            echo "<script>alert('Service Name must be at least 3 characters long.'); window.history.back();</script>";
+            exit();
+        }
+        if (strlen($description) < 10) {
+            echo "<script>alert('Description must be at least 10 characters long.'); window.history.back();</script>";
+            exit();
+        }
+        if ($fee <= 0) {
+            echo "<script>alert('Fee must be greater than 0.'); window.history.back();</script>";
+            exit();
+        }
+        $update_query = "UPDATE services SET service_name='$service_name', description='$description', fee='$fee', service_number='$service_number' WHERE service_id=$service_id";
+        mysqli_query($conn, $update_query);
+    } else {
+        echo "<script>alert('Please fill all required fields correctly.'); window.history.back();</script>";
+        exit();
+    }
+    header("Location: admin.php");
+    exit();
+}
+
+/* ===== DELETE SERVICE (with full cascade) ===== */
+if (isset($_POST['delete_service'])) {
+    $service_id = (int) $_POST['delete_service_id'];
+
+    if ($service_id > 0) {
+
+        // Step 1: Get the service name (used to match lawyers by specialization)
+        $svc_row = mysqli_fetch_assoc(
+            mysqli_query($conn, "SELECT service_name FROM services WHERE service_id=$service_id")
+        );
+        $service_name = $svc_row ? mysqli_real_escape_string($conn, $svc_row['service_name']) : '';
+
+        // Step 2: Find all lawyers whose specialization matches this service name
+        if (!empty($service_name)) {
+            $lawyers_q = mysqli_query($conn, "SELECT lawyer_id, profile_image FROM lawyers WHERE specialization='$service_name'");
+
+            while ($lawyer = mysqli_fetch_assoc($lawyers_q)) {
+                $lid = (int) $lawyer['lawyer_id'];
+
+                // Step 2a: Delete reviews left for this lawyer
+                mysqli_query($conn, "DELETE FROM reviews WHERE lawyer_id=$lid");
+
+                // Step 2b: Delete schedules of this lawyer
+                mysqli_query($conn, "DELETE FROM schedules WHERE lawyer_id=$lid");
+
+                // Step 2c: Delete appointments of this lawyer
+                mysqli_query($conn, "DELETE FROM appointments WHERE lawyer_id=$lid");
+
+                // Step 2d: Delete lawyer's uploaded profile image file from server
+                if (!empty($lawyer['profile_image'])) {
+                    $img_path = 'uploads/' . $lawyer['profile_image'];
+                    if (file_exists($img_path)) {
+                        unlink($img_path);
+                    }
+                }
+
+                // Step 2e: Delete the lawyer record itself
+                mysqli_query($conn, "DELETE FROM lawyers WHERE lawyer_id=$lid");
+            }
+        }
+
+        // Step 3: Delete any remaining appointments linked to this service_id
+        mysqli_query($conn, "DELETE FROM appointments WHERE service_id=$service_id");
+
+        // Step 4: Finally delete the service itself
+        mysqli_query($conn, "DELETE FROM services WHERE service_id=$service_id");
+    }
+
+    header("Location: admin.php");
+    exit();
+}
+
+
+/* ===== UPDATE APPOINTMENT ===== */
+if (isset($_POST['update_appointment'])) {
+    $appointment_id   = (int) $_POST['appt_id'];
+    $appointment_date = isset($_POST['appt_date']) ? mysqli_real_escape_string($conn, trim($_POST['appt_date'])) : '';
+    $appointment_time = isset($_POST['appt_time']) ? mysqli_real_escape_string($conn, trim($_POST['appt_time'])) : '';
+    $status           = isset($_POST['appt_status']) ? mysqli_real_escape_string($conn, trim($_POST['appt_status'])) : 'pending';
+    $message          = isset($_POST['appt_message']) ? mysqli_real_escape_string($conn, trim($_POST['appt_message'])) : '';
+
+    if ($appointment_id > 0 && !empty($appointment_date) && !empty($appointment_time)) {
+        $upd_appt = "UPDATE appointments SET appointment_date='$appointment_date', appointment_time='$appointment_time', status='$status', message='$message' WHERE appointment_id=$appointment_id";
+        mysqli_query($conn, $upd_appt);
+    }
+    header("Location: admin.php");
+    exit();
+}
+
+/* ===== DELETE APPOINTMENT ===== */
+if (isset($_POST['delete_appointment'])) {
+    $appointment_id = (int) $_POST['del_appt_id'];
+    mysqli_query($conn, "DELETE FROM appointments WHERE appointment_id=$appointment_id");
+    header("Location: admin.php");
+    exit();
+}
+
+
 // ===================== FETCH DYNAMIC DATA ===================== //
 // 1. Dashboard Cards Data
 $q_lawyers = mysqli_query($conn, "SELECT COUNT(*) as c FROM lawyers");
@@ -149,10 +300,10 @@ while($row = mysqli_fetch_assoc($q_recent)) {
       <!-- Active Admin Headshot -->
       <div class="sidebar-user">
         <div style="width:46px; height:46px; border-radius:50%; background:var(--gold-gradient); display:flex; align-items:center; justify-content:center; color:var(--dark); font-weight:800; font-size:1.1rem; flex-shrink:0;">
-          AD
+          <?php echo $admin_initials; ?>
         </div>
         <div>
-          <div style="font-size:0.86rem; font-weight:700; color:var(--white);">Platform Admin</div>
+          <div style="font-size:0.86rem; font-weight:700; color:var(--white);"><?php echo htmlspecialchars($admin_name); ?></div>
           <div style="font-size:0.68rem; color:var(--gold); font-weight:600;">Super Administrator</div>
         </div>
       </div>
@@ -168,6 +319,8 @@ while($row = mysqli_fetch_assoc($q_recent)) {
         <div class="menu-item" data-target="clients" onclick="switchPanel('clients', this)"><i class="fas fa-users"></i> Manage Clients</div>
         <div class="menu-item" data-target="services" onclick="switchPanel('services', this)"><i class="fas fa-gavel"></i> Manage Services</div>
         <div class="menu-item" data-target="appointments" onclick="switchPanel('appointments', this)"><i class="fas fa-calendar-check"></i> Manage Appointments</div>
+        <div class="menu-item" data-target="schedules" onclick="switchPanel('schedules', this)"><i class="fas fa-clock"></i> Manage Schedules</div>
+        <div class="menu-item" data-target="contact" onclick="switchPanel('contact', this)"><i class="fas fa-envelope"></i> Contact Messages</div>
 
         <div class="menu-title">Business Analytics</div>
         <div class="menu-item" data-target="reports" onclick="switchPanel('reports', this)"><i class="fas fa-chart-bar"></i> Reports &amp; Charts</div>
@@ -189,7 +342,7 @@ while($row = mysqli_fetch_assoc($q_recent)) {
         <div class="d-flex align-items-center gap-3">
           <span style="font-size:0.8rem; color:var(--text-muted);"><i class="fas fa-circle text-success me-1"></i> System Online</span>
           <div style="width:36px; height:36px; border-radius:50%; background:var(--gold-gradient); display:flex; align-items:center; justify-content:center; color:var(--dark); font-weight:800; font-size:0.9rem;">
-            AD
+            <?php echo $admin_initials; ?>
           </div>
         </div>
       </header>
@@ -325,14 +478,14 @@ while($row = mysqli_fetch_assoc($q_recent)) {
             <!-- Search & Filter Area -->
             <div class="row g-3 mb-4">
               <div class="col-md-6">
-                <input type="text" class="luxury-input form-control" id="searchLawyerInput" placeholder="Search lawyer by name...">
+                <input type="text" class="luxury-input form-control" id="phpSearchLawyer" placeholder="Search lawyer by name...">
               </div>
               <div class="col-md-6">
-                <select class="luxury-input form-control" id="filterLawyerStatus" style="background-color: var(--dark-card);">
+                <select class="luxury-input form-control" id="phpFilterLawyer" style="background-color: var(--dark-card);">
                   <option value="all">All Verification Statuses</option>
-                  <option value="active">Active Verified</option>
+                  <option value="approved">Active Verified (Approved)</option>
                   <option value="pending">Pending Review</option>
-                  <option value="suspended">Suspended</option>
+                  <option value="rejected">Rejected / Suspended</option>
                 </select>
               </div>
             </div>
@@ -359,7 +512,7 @@ while($row = mysqli_fetch_assoc($q_recent)) {
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="adminLawyersTbody">
                   <?php
 
                   $query = "SELECT * FROM lawyers";
@@ -385,23 +538,57 @@ style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
 
                     echo "<td>" . $row['status'] . "</td>";
                     echo "<td>" . $row['created_at'] . "</td>";
-                    echo "
+echo "
 <td>
-    <div class='d-flex gap-2'>
+    <div class='d-flex gap-2 flex-wrap align-items-center'>
 
-        <a href='lawyer_view.php?id=" . $row['lawyer_id'] . "' 
+        <!-- Show Approve button ONLY if status is Pending -->
+        " . (ucfirst($row['status']) === 'Pending' ? "
+        <a href='lawyer_approve.php?id=" . $row['lawyer_id'] . "'
+           class='btn btn-sm btn-success text-white'
+           onclick=\"return confirm('Are you sure you want to approve this lawyer?');\"
+           title='Approve Lawyer'>
+            <i class='bi bi-check-circle'></i>
+        </a>
+        " : "") . "
+
+        <!-- Show Reject button ONLY if status is Pending -->
+        " . (ucfirst($row['status']) === 'Pending' ? "
+        <a href='lawyer_reject.php?id=" . $row['lawyer_id'] . "'
+           class='btn btn-sm btn-secondary text-white'
+           onclick=\"return confirm('Are you sure you want to reject this lawyer?');\"
+           title='Reject Lawyer'>
+            <i class='bi bi-x-circle'></i>
+        </a>
+        " : "") . "
+
+        <!-- Show Approved badge if already Approved -->
+        " . (ucfirst($row['status']) === 'Approved' ? "
+        <span class='badge bg-success px-2 py-1' title='Already Approved'>
+            <i class='bi bi-check-circle me-1'></i>Approved
+        </span>
+        " : "") . "
+
+        <!-- Show Rejected badge if already Rejected -->
+        " . (ucfirst($row['status']) === 'Rejected' ? "
+        <span class='badge bg-danger px-2 py-1' title='Already Rejected'>
+            <i class='bi bi-x-circle me-1'></i>Rejected
+        </span>
+        " : "") . "
+
+        <a href='lawyer_view.php?id=" . $row['lawyer_id'] . "'
            class='btn btn-sm btn-info text-white'
            title='View Lawyer'>
             <i class='bi bi-eye'></i>
         </a>
 
-        <a href='lawyer_edit.php?id=" . $row['lawyer_id'] . "' 
+        <a href='lawyer_edit.php?id=" . $row['lawyer_id'] . "'
            class='btn btn-sm btn-warning text-white'
            title='Edit Lawyer'>
             <i class='bi bi-pencil-square'></i>
         </a>
 
-        <a href='lawyer_delete.php?id=" . $row['lawyer_id'] . "' 
+        <a href='lawyer_delete.php?id=" . $row['lawyer_id'] . "'
            class='btn btn-sm btn-danger'
            onclick=\"return confirm('Are you sure you want to delete this lawyer?');\"
            title='Delete Lawyer'>
@@ -441,7 +628,7 @@ style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
             <!-- Search Bar -->
             <div class="row g-3 mb-4">
               <div class="col-md-6">
-                <input type="text" class="luxury-input form-control" id="searchCustomerInput" placeholder="Search client by name or email address...">
+                <input type="text" class="luxury-input form-control" id="phpSearchCustomer" placeholder="Search client by name or email address...">
               </div>
             </div>
 
@@ -461,7 +648,7 @@ style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
                     <th>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="adminCustomersTbody">
                   <?php
 
                   
@@ -531,9 +718,7 @@ style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
                         <th>Service Name</th>
                         <th>Description</th>
                         <th>Fee</th>
-                        <th>Icon</th>
                         <th>Service No.</th>
-                        <th>Button Text</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -541,7 +726,7 @@ style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
                 <tbody>
 
                     <?php
-                    $query = mysqli_query($conn, "SELECT * FROM services ORDER BY service_id DESC");
+                    $query = mysqli_query($conn, "SELECT * FROM services ORDER BY service_id ASC");
 
                     while($service = mysqli_fetch_assoc($query)){
                     ?>
@@ -551,9 +736,7 @@ style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
                         <td><?php echo htmlspecialchars($service['service_name']); ?></td>
                         <td><?php echo htmlspecialchars($service['description']); ?></td>
                         <td>PKR <?php echo number_format($service['fee']); ?></td>
-                        <td><i class="fas <?php echo $service['icon']; ?>"></i> <?php echo $service['icon']; ?></td>
                         <td><?php echo $service['service_number']; ?></td>
-                        <td><?php echo htmlspecialchars($service['button_text']); ?></td>
 
                        <td class="text-center">
     <button class="action-btn edit-btn"
@@ -584,10 +767,10 @@ style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
             <!-- Search / Filters -->
             <div class="row g-3 mb-4">
               <div class="col-md-6">
-                <input type="text" class="luxury-input form-control" id="searchApptInput" placeholder="Search by lawyer or client name...">
+                <input type="text" class="luxury-input form-control" id="phpSearchAppt" placeholder="Search by lawyer or client name...">
               </div>
               <div class="col-md-6">
-                <select class="luxury-input form-control" id="filterApptStatus" style="background-color: var(--dark-card);">
+                <select class="luxury-input form-control" id="phpFilterAppt" style="background-color: var(--dark-card);">
                   <option value="all">All Consultation Statuses</option>
                   <option value="pending">Pending Approval</option>
                   <option value="confirmed">Confirmed / Active</option>
@@ -614,7 +797,7 @@ style='width:50px;height:50px;object-fit:cover;border-radius:50%;'>
                   </tr>
                 </thead>
 
-                <tbody>
+                <tbody id="adminApptsTbody">
                   <?php
 
                   $query = mysqli_query($conn, "
@@ -701,6 +884,87 @@ ORDER BY a.appointment_id DESC
                 <!-- Loaded dynamically -->
               </ul>
             </nav>
+          </div>
+        </div>
+
+        <!-- ===================== PANEL: MANAGE SCHEDULES ===================== -->
+        <div class="panel-section" id="sec-schedules">
+          <div class="dash-card">
+            <div class="dash-card-title">Lawyer Schedules</div>
+            <div style="overflow-x:auto;">
+              <table class="lux-table table table-dark table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>Schedule ID</th>
+                    <th>Lawyer Name</th>
+                    <th>Day</th>
+                    <th>Time</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php
+                  $sq = mysqli_query($conn, "SELECT s.*, l.full_name FROM schedules s JOIN lawyers l ON s.lawyer_id = l.lawyer_id ORDER BY s.schedule_id DESC");
+                  while($srow = mysqli_fetch_assoc($sq)) {
+                      $status_badge = ($srow['status'] == 'Available') ? 'bg-success' : 'bg-danger';
+                      echo "<tr>
+                        <td>{$srow['schedule_id']}</td>
+                        <td>{$srow['full_name']}</td>
+                        <td>{$srow['day']}</td>
+                        <td>" . date('h:i A', strtotime($srow['start_time'])) . "</td>
+                        <td><span class='badge {$status_badge}'>{$srow['status']}</span></td>
+                      </tr>";
+                  }
+                  ?>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===================== PANEL: CONTACT MESSAGES ===================== -->
+        <div class="panel-section" id="sec-contact">
+          <div class="dash-card">
+            <div class="dash-card-title">Contact Messages</div>
+            <div style="overflow-x:auto;">
+              <table class="lux-table table table-dark table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Subject</th>
+                    <th>Message</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php
+                  $q_msg = mysqli_query($conn, "SELECT * FROM contact_messages ORDER BY message_id DESC");
+                  if(mysqli_num_rows($q_msg) > 0) {
+                      while($msg = mysqli_fetch_assoc($q_msg)) {
+                          echo "<tr>
+                            <td>{$msg['message_id']}</td>
+                            <td>" . htmlspecialchars($msg['name']) . "</td>
+                            <td>" . htmlspecialchars($msg['email']) . "</td>
+                            <td>" . htmlspecialchars($msg['subject']) . "</td>
+                            <td><div style='max-width:300px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;' title='" . htmlspecialchars($msg['message']) . "'>" . htmlspecialchars($msg['message']) . "</div></td>
+                            <td>" . date('M d, Y', strtotime($msg['created_at'])) . "</td>
+                            <td>
+                              <a href='admin.php?delete_message={$msg['message_id']}' class='btn btn-danger btn-sm' onclick='return confirm(\"Are you sure you want to delete this message?\")'>
+                                <i class='fas fa-trash'></i>
+                              </a>
+                            </td>
+                          </tr>";
+                      }
+                  } else {
+                      echo "<tr><td colspan='7' class='text-center'>No messages found.</td></tr>";
+                  }
+                  ?>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -821,44 +1085,32 @@ ORDER BY a.appointment_id DESC
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
 
-            <form id="serviceForm" method="POST">
+            <form id="serviceForm" method="POST" onsubmit="return validateServiceForm()">
 
                 <div class="modal-body text-white">
 
                     <!-- Service Name -->
                     <div class="form-field-luxury mb-3">
                         <label>Service Name</label>
-                        <input type="text" name="service_name" class="luxury-input form-control" placeholder="e.g. Criminal Law" required>
+                        <input type="text" name="service_name" id="service_name_input" class="luxury-input form-control" placeholder="e.g. Criminal Law" required minlength="3" maxlength="100">
                     </div>
 
                     <!-- Description -->
                     <div class="form-field-luxury mb-3">
                         <label>Description</label>
-                        <textarea name="description" class="luxury-input form-control" rows="4" placeholder="Enter service description" required></textarea>
+                        <textarea name="description" id="service_desc_input" class="luxury-input form-control" rows="4" placeholder="Enter service description" required minlength="10" maxlength="1000"></textarea>
                     </div>
 
                     <!-- Fee -->
                     <div class="form-field-luxury mb-3">
                         <label>Fee (PKR)</label>
-                        <input type="number" name="fee" class="luxury-input form-control" placeholder="Enter fee" required>
+                        <input type="number" name="fee" id="service_fee_input" class="luxury-input form-control" placeholder="Enter fee" required min="1">
                     </div>
 
-                    <!-- Icon -->
-                    <div class="form-field-luxury mb-3">
-                        <label>Icon</label>
-                        <input type="text" name="icon" class="luxury-input form-control" placeholder="fa-globe" required>
-                    </div>
 
-                    <!-- Service Number -->
                     <div class="form-field-luxury mb-3">
                         <label>Service Number</label>
-                        <input type="number" name="service_number" class="luxury-input form-control" placeholder="1" required>
-                    </div>
-
-                    <!-- Button Text -->
-                    <div class="form-field-luxury mb-3">
-                        <label>Button Text</label>
-                        <input type="text" name="button_text" class="luxury-input form-control" placeholder="Find Immigration Lawyer" required>
+                        <input type="number" name="service_number" id="service_num_input" class="luxury-input form-control" placeholder="1" required min="1" max="100">
                     </div>
 
                 </div>
@@ -878,107 +1130,7 @@ ORDER BY a.appointment_id DESC
         </div>
     </div>
 </div>
-  <?php
-/* ===== ADD SERVICE ===== */
-if (isset($_POST['submit_service'])) {
-
-    $service_name   = mysqli_real_escape_string($conn, $_POST['service_name']);
-    $description    = mysqli_real_escape_string($conn, $_POST['description']);
-    $fee            = mysqli_real_escape_string($conn, $_POST['fee']);
-    $icon           = mysqli_real_escape_string($conn, $_POST['icon']);
-    $service_number = mysqli_real_escape_string($conn, $_POST['service_number']);
-    $button_text    = mysqli_real_escape_string($conn, $_POST['button_text']);
-
-    $insert_query = "INSERT INTO services
-    (service_name, description, fee, icon, service_number, button_text)
-    VALUES
-    ('$service_name', '$description', '$fee', '$icon', '$service_number', '$button_text')";
-
-    if (mysqli_query($conn, $insert_query)) {
-        echo "<script>alert('Service added successfully!'); window.location.href='admin.php';</script>";
-    } else {
-        echo "<script>alert('Error adding service: " . mysqli_error($conn) . "');</script>";
-    }
-}
-
-/* ===== UPDATE SERVICE ===== */
-if (isset($_POST['update_service'])) {
-
-    $service_id     = (int) $_POST['edit_service_id'];
-    $service_name   = mysqli_real_escape_string($conn, $_POST['edit_service_name']);
-    $description    = mysqli_real_escape_string($conn, $_POST['edit_description']);
-    $fee            = mysqli_real_escape_string($conn, $_POST['edit_fee']);
-    $icon           = mysqli_real_escape_string($conn, $_POST['edit_icon']);
-    $service_number = mysqli_real_escape_string($conn, $_POST['edit_service_number']);
-    $button_text    = mysqli_real_escape_string($conn, $_POST['edit_button_text']);
-
-    $update_query = "UPDATE services SET
-        service_name   = '$service_name',
-        description    = '$description',
-        fee            = '$fee',
-        icon           = '$icon',
-        service_number = '$service_number',
-        button_text    = '$button_text'
-    WHERE service_id = $service_id";
-
-    if (mysqli_query($conn, $update_query)) {
-        echo "<script>alert('Service updated successfully!'); window.location.href='admin.php';</script>";
-    } else {
-        echo "<script>alert('Error updating service: " . mysqli_error($conn) . "');</script>";
-    }
-}
-
-/* ===== DELETE SERVICE ===== */
-if (isset($_POST['delete_service'])) {
-
-    $service_id = (int) $_POST['delete_service_id'];
-
-    $delete_query = "DELETE FROM services WHERE service_id = $service_id";
-
-    if (mysqli_query($conn, $delete_query)) {
-        echo "<script>alert('Service deleted successfully!'); window.location.href='admin.php';</script>";
-    } else {
-        echo "<script>alert('Error deleting service: " . mysqli_error($conn) . "');</script>";
-    }
-}
-
-/* ===== UPDATE APPOINTMENT ===== */
-if (isset($_POST['update_appointment'])) {
-
-    $appointment_id   = (int) $_POST['appt_id'];
-    $appointment_date = mysqli_real_escape_string($conn, $_POST['appt_date']);
-    $appointment_time = mysqli_real_escape_string($conn, $_POST['appt_time']);
-    $status           = mysqli_real_escape_string($conn, $_POST['appt_status']);
-    $message          = mysqli_real_escape_string($conn, $_POST['appt_message']);
-
-    $upd_appt = "UPDATE appointments SET
-        appointment_date = '$appointment_date',
-        appointment_time = '$appointment_time',
-        status           = '$status',
-        message          = '$message'
-    WHERE appointment_id = $appointment_id";
-
-    if (mysqli_query($conn, $upd_appt)) {
-        echo "<script>alert('Appointment updated successfully!'); window.location.href='admin.php';</script>";
-    } else {
-        echo "<script>alert('Error updating appointment: " . mysqli_error($conn) . "');</script>";
-    }
-}
-
-/* ===== DELETE APPOINTMENT ===== */
-if (isset($_POST['delete_appointment'])) {
-
-    $appointment_id = (int) $_POST['del_appt_id'];
-
-    $del_appt = "DELETE FROM appointments WHERE appointment_id = $appointment_id";
-
-    if (mysqli_query($conn, $del_appt)) {
-        echo "<script>alert('Appointment deleted successfully!'); window.location.href='admin.php';</script>";
-    } else {
-        echo "<script>alert('Error deleting appointment: " . mysqli_error($conn) . "');</script>";
-    }
-}
-  ?>
+  <!-- Actions handled at the top of the file -->
 
   <!-- ===================== MODAL: EDIT SERVICE ===================== -->
   <div class="modal fade modal-luxury" id="editServiceModal" tabindex="-1" aria-labelledby="editServiceModalLabel" aria-hidden="true">
@@ -992,7 +1144,7 @@ if (isset($_POST['delete_appointment'])) {
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
 
-        <form id="editServiceForm" method="POST">
+        <form id="editServiceForm" method="POST" onsubmit="return validateEditServiceForm()">
           <input type="hidden" name="edit_service_id" id="edit_service_id">
 
           <div class="modal-body text-white">
@@ -1001,7 +1153,7 @@ if (isset($_POST['delete_appointment'])) {
             <div class="form-field-luxury mb-3">
               <label>Service Name</label>
               <input type="text" name="edit_service_name" id="edit_service_name"
-                     class="luxury-input form-control" placeholder="e.g. Criminal Law" required>
+                     class="luxury-input form-control" placeholder="e.g. Criminal Law" required minlength="3" maxlength="100">
             </div>
 
             <!-- Description -->
@@ -1009,35 +1161,21 @@ if (isset($_POST['delete_appointment'])) {
               <label>Description</label>
               <textarea name="edit_description" id="edit_description"
                         class="luxury-input form-control" rows="4"
-                        placeholder="Enter service description" required></textarea>
+                        class="luxury-input form-control" rows="4"
+                        placeholder="Enter service description" required minlength="10" maxlength="1000"></textarea>
             </div>
 
             <!-- Fee -->
             <div class="form-field-luxury mb-3">
               <label>Fee (PKR)</label>
               <input type="number" name="edit_fee" id="edit_fee"
-                     class="luxury-input form-control" placeholder="Enter fee" required>
+                     class="luxury-input form-control" placeholder="Enter fee" required min="1">
             </div>
 
-            <!-- Icon -->
-            <div class="form-field-luxury mb-3">
-              <label>Icon <small style="color:var(--text-muted); font-size:0.72rem;">(FontAwesome class, e.g. fa-globe)</small></label>
-              <input type="text" name="edit_icon" id="edit_icon"
-                     class="luxury-input form-control" placeholder="fa-globe" required>
-            </div>
-
-            <!-- Service Number -->
             <div class="form-field-luxury mb-3">
               <label>Service Number</label>
               <input type="number" name="edit_service_number" id="edit_service_number"
-                     class="luxury-input form-control" placeholder="1" required>
-            </div>
-
-            <!-- Button Text -->
-            <div class="form-field-luxury mb-3">
-              <label>Button Text</label>
-              <input type="text" name="edit_button_text" id="edit_button_text"
-                     class="luxury-input form-control" placeholder="Find Immigration Lawyer" required>
+                     class="luxury-input form-control" placeholder="1" required min="1" max="100">
             </div>
 
           </div>
@@ -1107,20 +1245,155 @@ if (isset($_POST['delete_appointment'])) {
   <!-- Admin Controls Logic -->
   <script src="js/admin.js"></script>
 
+  <!-- ===================== DOM FILTERING FOR ADMIN TABLES ===================== -->
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      // 1. Lawyers Table Filter
+      const searchLawyer = document.getElementById('phpSearchLawyer');
+      const filterLawyer = document.getElementById('phpFilterLawyer');
+      const lawyersTbody = document.getElementById('adminLawyersTbody');
+
+      function filterLawyers() {
+        if(!lawyersTbody) return;
+        const sText = searchLawyer ? searchLawyer.value.toLowerCase() : '';
+        const sStatus = filterLawyer ? filterLawyer.value.toLowerCase() : 'all';
+        const rows = lawyersTbody.getElementsByTagName('tr');
+
+        for(let i=0; i<rows.length; i++) {
+          const nameCol = rows[i].getElementsByTagName('td')[0];
+          const statusCol = rows[i].getElementsByTagName('td')[6];
+          if(nameCol && statusCol) {
+            const name = nameCol.textContent.toLowerCase();
+            const status = statusCol.textContent.toLowerCase();
+            const matchesText = name.includes(sText);
+            const matchesStatus = (sStatus === 'all') || (status === sStatus);
+            rows[i].style.display = (matchesText && matchesStatus) ? '' : 'none';
+          }
+        }
+      }
+      if(searchLawyer) searchLawyer.addEventListener('keyup', filterLawyers);
+      if(filterLawyer) filterLawyer.addEventListener('change', filterLawyers);
+
+      // 2. Customers Table Filter
+      const searchCustomer = document.getElementById('phpSearchCustomer');
+      const customersTbody = document.getElementById('adminCustomersTbody');
+      
+      function filterCustomers() {
+        if(!customersTbody) return;
+        const sText = searchCustomer ? searchCustomer.value.toLowerCase() : '';
+        const rows = customersTbody.getElementsByTagName('tr');
+
+        for(let i=0; i<rows.length; i++) {
+          const nameCol = rows[i].getElementsByTagName('td')[1];
+          const emailCol = rows[i].getElementsByTagName('td')[2];
+          if(nameCol && emailCol) {
+            const name = nameCol.textContent.toLowerCase();
+            const email = emailCol.textContent.toLowerCase();
+            rows[i].style.display = (name.includes(sText) || email.includes(sText)) ? '' : 'none';
+          }
+        }
+      }
+      if(searchCustomer) searchCustomer.addEventListener('keyup', filterCustomers);
+
+      // 3. Appointments Table Filter
+      const searchAppt = document.getElementById('phpSearchAppt');
+      const filterAppt = document.getElementById('phpFilterAppt');
+      const apptsTbody = document.getElementById('adminApptsTbody');
+
+      function filterAppts() {
+        if(!apptsTbody) return;
+        const sText = searchAppt ? searchAppt.value.toLowerCase() : '';
+        const sStatus = filterAppt ? filterAppt.value.toLowerCase() : 'all';
+        const rows = apptsTbody.getElementsByTagName('tr');
+
+        for(let i=0; i<rows.length; i++) {
+          const custCol = rows[i].getElementsByTagName('td')[1];
+          const lawyCol = rows[i].getElementsByTagName('td')[2];
+          const statusCol = rows[i].getElementsByTagName('td')[7];
+          
+          if(custCol && lawyCol && statusCol) {
+            const cust = custCol.textContent.toLowerCase();
+            const lawy = lawyCol.textContent.toLowerCase();
+            const status = statusCol.textContent.toLowerCase().trim();
+            
+            const matchesText = cust.includes(sText) || lawy.includes(sText);
+            const matchesStatus = (sStatus === 'all') || (status === sStatus);
+            rows[i].style.display = (matchesText && matchesStatus) ? '' : 'none';
+          }
+        }
+      }
+      if(searchAppt) searchAppt.addEventListener('keyup', filterAppts);
+      if(filterAppt) filterAppt.addEventListener('change', filterAppts);
+    });
+  </script>
+
+  <!-- ===================== SERVICE FORM JS VALIDATIONS ===================== -->
+  <script>
+    /* ---- Add Service Form Validation ---- */
+    function validateServiceForm() {
+      var name = document.getElementById('service_name_input').value.trim();
+      var desc = document.getElementById('service_desc_input').value.trim();
+      var fee  = parseFloat(document.getElementById('service_fee_input').value);
+      var num  = parseInt(document.getElementById('service_num_input').value);
+
+      if (!name || name.length < 3) {
+        alert('Service Name must be at least 3 characters long.');
+        return false;
+      }
+      if (!desc || desc.length < 10) {
+        alert('Description must be at least 10 characters long.');
+        return false;
+      }
+      if (isNaN(fee) || fee <= 0) {
+        alert('Fee must be a number greater than 0.');
+        return false;
+      }
+      if (isNaN(num) || num < 1) {
+        alert('Service Number must be at least 1.');
+        return false;
+      }
+      return true;
+    }
+
+    /* ---- Edit Service Form Validation ---- */
+    function validateEditServiceForm() {
+      var name = document.getElementById('edit_service_name').value.trim();
+      var desc = document.getElementById('edit_description').value.trim();
+      var fee  = parseFloat(document.getElementById('edit_fee').value);
+      var num  = parseInt(document.getElementById('edit_service_number').value);
+
+      if (!name || name.length < 3) {
+        alert('Service Name must be at least 3 characters long.');
+        return false;
+      }
+      if (!desc || desc.length < 10) {
+        alert('Description must be at least 10 characters long.');
+        return false;
+      }
+      if (isNaN(fee) || fee <= 0) {
+        alert('Fee must be a number greater than 0.');
+        return false;
+      }
+      if (isNaN(num) || num < 1) {
+        alert('Service Number must be at least 1.');
+        return false;
+      }
+      return true;
+    }
+  </script>
+
   <!-- ===================== SERVICE EDIT / DELETE HANDLERS ===================== -->
   <script>
     /* ---------- Services data map (PHP → JS) ---------- */
     var servicesData = {};
     <?php
-      $svc_result = mysqli_query($conn, "SELECT * FROM services ORDER BY service_id DESC");
+      $svc_result = mysqli_query($conn, "SELECT * FROM services ORDER BY service_id ASC");
       while ($svc_row = mysqli_fetch_assoc($svc_result)) {
           echo "servicesData[" . $svc_row['service_id'] . "] = {";
           echo "service_name:"   . json_encode($svc_row['service_name'])   . ",";
           echo "description:"    . json_encode($svc_row['description'])    . ",";
           echo "fee:"            . json_encode($svc_row['fee'])            . ",";
-          echo "icon:"           . json_encode($svc_row['icon'])           . ",";
-          echo "service_number:" . json_encode($svc_row['service_number']) . ",";
-          echo "button_text:"    . json_encode($svc_row['button_text'])    . "";
+          echo "service_number:" . json_encode($svc_row['service_number']) . "";
           echo "};\n";
       }
     ?>
@@ -1137,9 +1410,7 @@ if (isset($_POST['delete_appointment'])) {
       document.getElementById('edit_service_name').value   = s.service_name;
       document.getElementById('edit_description').value    = s.description;
       document.getElementById('edit_fee').value            = s.fee;
-      document.getElementById('edit_icon').value           = s.icon;
       document.getElementById('edit_service_number').value = s.service_number;
-      document.getElementById('edit_button_text').value    = s.button_text;
 
       var modal = new bootstrap.Modal(document.getElementById('editServiceModal'));
       modal.show();
@@ -1436,6 +1707,14 @@ if (isset($_POST['delete_appointment'])) {
             window.initCharts();
         }, 100);
     });
+
+    function exportDataReport(type) {
+        if (type === 'csv') {
+            window.location.href = 'export_reports.php?type=csv';
+        } else {
+            alert("PDF export requires an external library. Please use CSV for now.");
+        }
+    }
   </script>
 
 </body>
